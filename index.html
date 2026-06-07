@@ -261,6 +261,10 @@
   </div>
   <div class="header-right">
     <div class="corner-deco">11 MODES<br>PNG EXPORT</div>
+    <button class="theme-toggle" id="muteToggle">
+      <span class="icon" id="muteIcon">🔊</span>
+      <span id="muteLabel">SOUND</span>
+    </button>
     <button class="theme-toggle" id="themeToggle">
       <span class="icon" id="themeIcon">🌙</span>
       <span id="themeLabel">DARK</span>
@@ -391,7 +395,106 @@ themeToggle.addEventListener('click', () => {
   html.setAttribute('data-theme', isDark ? 'dark' : 'light');
   themeIcon.textContent  = isDark ? '☀️' : '🌙';
   themeLabel.textContent = isDark ? 'LIGHT' : 'DARK';
+  SFX.click();
 });
+
+// ── Audio engine ──────────────────────────────────────────────────────
+const SFX = (() => {
+  let ctx = null;
+  let muted = false;
+
+  // Lazily create AudioContext on first user gesture (browser policy)
+  function getCtx() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  // Short envelope helper: ramps gain from peak → 0 over decayTime
+  function burst(type, freq, peak, decaySec, startHz, endHz) {
+    if (muted) return;
+    const ac  = getCtx();
+    const osc = ac.createOscillator();
+    const env = ac.createGain();
+    osc.connect(env);
+    env.connect(ac.destination);
+
+    osc.type = type;
+    const now = ac.currentTime;
+
+    if (startHz && endHz) {
+      // Frequency sweep
+      osc.frequency.setValueAtTime(startHz, now);
+      osc.frequency.exponentialRampToValueAtTime(endHz, now + decaySec);
+    } else {
+      osc.frequency.setValueAtTime(freq, now);
+    }
+
+    env.gain.setValueAtTime(peak, now);
+    env.gain.exponentialRampToValueAtTime(0.0001, now + decaySec);
+
+    osc.start(now);
+    osc.stop(now + decaySec + 0.01);
+  }
+
+  // ── [ CLICK ] sharp square-wave snap ─────────────────────────────────
+  function click() {
+    burst('square', 480, 0.18, 0.055);
+  }
+
+  // ── [ CHIRP ] rising two-tone beep for mode switches ─────────────────
+  function chirp() {
+    if (muted) return;
+    const ac  = getCtx();
+    const now = ac.currentTime;
+
+    // First tone
+    const o1 = ac.createOscillator();
+    const g1 = ac.createGain();
+    o1.connect(g1); g1.connect(ac.destination);
+    o1.type = 'square';
+    o1.frequency.setValueAtTime(320, now);
+    g1.gain.setValueAtTime(0.12, now);
+    g1.gain.exponentialRampToValueAtTime(0.0001, now + 0.07);
+    o1.start(now); o1.stop(now + 0.08);
+
+    // Second tone, slightly later and higher
+    const o2 = ac.createOscillator();
+    const g2 = ac.createGain();
+    o2.connect(g2); g2.connect(ac.destination);
+    o2.type = 'square';
+    o2.frequency.setValueAtTime(560, now + 0.06);
+    g2.gain.setValueAtTime(0.0001, now + 0.06);
+    g2.gain.linearRampToValueAtTime(0.14, now + 0.09);
+    g2.gain.exponentialRampToValueAtTime(0.0001, now + 0.18);
+    o2.start(now + 0.06); o2.stop(now + 0.19);
+  }
+
+  // ── [ TICK ] ultra-short blip for slider drags ────────────────────────
+  // Throttled: fires at most once every 80 ms to avoid audio stutter
+  let lastTick = 0;
+  function tick() {
+    if (muted) return;
+    const now = performance.now();
+    if (now - lastTick < 80) return;
+    lastTick = now;
+    burst('sine', 900, 0.07, 0.03);
+  }
+
+  // ── Mute toggle ───────────────────────────────────────────────────────
+  const muteToggle = document.getElementById('muteToggle');
+  const muteIcon   = document.getElementById('muteIcon');
+  const muteLabel  = document.getElementById('muteLabel');
+
+  muteToggle.addEventListener('click', () => {
+    muted = !muted;
+    muteIcon.textContent  = muted ? '🔇' : '🔊';
+    muteLabel.textContent = muted ? 'MUTED' : 'SOUND';
+    if (!muted) click(); // confirm unmute with a click
+  });
+
+  return { click, chirp, tick };
+})();
 
 // ── Palettes ─────────────────────────────────────────────────────────
 const PALETTES = {
@@ -480,9 +583,9 @@ const infoChip        = document.getElementById('infoChip');
 const ctx             = outputCanvas.getContext('2d', { willReadFrequently: true });
 
 // ── Events ───────────────────────────────────────────────────────────
-uploadBtn.addEventListener('click', () => { stopWebcam(); fileInput.click(); });
+uploadBtn.addEventListener('click', () => { SFX.click(); stopWebcam(); fileInput.click(); });
 fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
-webcamBtn.addEventListener('click', toggleWebcam);
+webcamBtn.addEventListener('click', () => { SFX.click(); toggleWebcam(); });
 
 canvasWrap.addEventListener('dragenter', e => { e.preventDefault(); canvasWrap.classList.add('drag-over'); });
 canvasWrap.addEventListener('dragover',  e => e.preventDefault());
@@ -490,26 +593,27 @@ canvasWrap.addEventListener('dragleave', e => { if (!canvasWrap.contains(e.relat
 canvasWrap.addEventListener('drop', e => { e.preventDefault(); canvasWrap.classList.remove('drag-over'); stopWebcam(); loadFile(e.dataTransfer.files[0]); });
 
 // Sliders call render() — webcam loop picks up state changes automatically
-blockSlider.addEventListener('input', () => { state.blockSize = +blockSlider.value; blockVal.textContent = state.blockSize + ' px'; render(); });
-contrastSlider.addEventListener('input', () => { state.contrast = +contrastSlider.value; contrastVal.textContent = (state.contrast > 0 ? '+' : '') + state.contrast; render(); });
-satSlider.addEventListener('input', () => { state.saturation = +satSlider.value / 10; satVal.textContent = state.saturation.toFixed(1) + '×'; render(); });
-ditherTypeEl.addEventListener('change', () => { state.ditherType = ditherTypeEl.value; render(); });
-ditherSlider.addEventListener('input', () => { state.ditherIntensity = +ditherSlider.value / 100; ditherVal.textContent = ditherSlider.value + '%'; render(); });
-scanlineToggle.addEventListener('change', () => { state.scanlines = scanlineToggle.checked; render(); });
-scanlineSlider.addEventListener('input', () => { state.scanlineIntensity = +scanlineSlider.value / 100; scanlineVal.textContent = scanlineSlider.value + '%'; render(); });
-rgbSplitSlider.addEventListener('input', () => { state.rgbSplit = +rgbSplitSlider.value; rgbSplitVal.textContent = state.rgbSplit + ' px'; render(); });
-jitterSlider.addEventListener('input', () => { state.jitter = +jitterSlider.value; jitterVal.textContent = state.jitter + ' px'; render(); });
+blockSlider.addEventListener('input', () => { SFX.tick(); state.blockSize = +blockSlider.value; blockVal.textContent = state.blockSize + ' px'; render(); });
+contrastSlider.addEventListener('input', () => { SFX.tick(); state.contrast = +contrastSlider.value; contrastVal.textContent = (state.contrast > 0 ? '+' : '') + state.contrast; render(); });
+satSlider.addEventListener('input', () => { SFX.tick(); state.saturation = +satSlider.value / 10; satVal.textContent = state.saturation.toFixed(1) + '×'; render(); });
+ditherTypeEl.addEventListener('change', () => { SFX.click(); state.ditherType = ditherTypeEl.value; render(); });
+ditherSlider.addEventListener('input', () => { SFX.tick(); state.ditherIntensity = +ditherSlider.value / 100; ditherVal.textContent = ditherSlider.value + '%'; render(); });
+scanlineToggle.addEventListener('change', () => { SFX.click(); state.scanlines = scanlineToggle.checked; render(); });
+scanlineSlider.addEventListener('input', () => { SFX.tick(); state.scanlineIntensity = +scanlineSlider.value / 100; scanlineVal.textContent = scanlineSlider.value + '%'; render(); });
+rgbSplitSlider.addEventListener('input', () => { SFX.tick(); state.rgbSplit = +rgbSplitSlider.value; rgbSplitVal.textContent = state.rgbSplit + ' px'; render(); });
+jitterSlider.addEventListener('input', () => { SFX.tick(); state.jitter = +jitterSlider.value; jitterVal.textContent = state.jitter + ' px'; render(); });
 
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     state.colorMode = btn.dataset.mode;
+    SFX.chirp();
     render();
   });
 });
 
-exportBtn.addEventListener('click', exportPNG);
+exportBtn.addEventListener('click', () => { SFX.click(); exportPNG(); });
 
 // ── Webcam ────────────────────────────────────────────────────────────
 async function toggleWebcam() {
