@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PIXEL FORGE — Pixel Art Converter</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:         #07070f;
+      --panel:      #0c0c1a;
+      --border:     #1c1c38;
+      --accent:     #7c3aed;
+      --accent2:    #5b21b6;
+      --glow:       rgba(124,58,237,0.45);
+      --text:       #ddddf4;
+      --dim:        #555580;
+      --green:      #00ff41;
+      --cyan:       #00e5ff;
+      --amber:      #ffb300;
+      --pink:       #ff44dd;
+    }
+
+    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px; }
+
+    /* ── Header ──────────────────────────────────── */
+    header {
+      background: linear-gradient(180deg, #10102a 0%, var(--bg) 100%);
+      border-bottom: 2px solid var(--accent);
+      padding: 18px 28px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: relative; overflow: hidden; flex-shrink: 0;
+    }
+    header::after {
+      content: '';
+      position: absolute; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(124,58,237,.04) 3px, rgba(124,58,237,.04) 4px);
+      pointer-events: none;
+    }
+    header h1 {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(11px, 2.2vw, 20px);
+      color: var(--cyan);
+      text-shadow: 0 0 8px rgba(0,229,255,.9), 0 0 28px rgba(0,229,255,.4);
+      letter-spacing: 2px;
+    }
+    header .sub {
+      font-size: 10px; color: var(--dim); letter-spacing: 1px;
+      margin-top: 6px;
+    }
+    .corner-deco {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px; color: var(--dim);
+      text-align: right; line-height: 2;
+    }
+
+    /* ── Layout ──────────────────────────────────── */
+    .app {
+      display: flex;
+      height: calc(100vh - 76px);
+    }
+
+    /* ── Sidebar ─────────────────────────────────── */
+    aside {
+      width: 272px; flex-shrink: 0;
+      background: var(--panel);
+      border-right: 2px solid var(--border);
+      display: flex; flex-direction: column; gap: 0;
+      overflow-y: auto; overflow-x: hidden;
+    }
+    aside::-webkit-scrollbar { width: 3px; }
+    aside::-webkit-scrollbar-thumb { background: var(--border); }
+
+    .pane {
+      padding: 16px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+    .pane:last-child { border-bottom: none; margin-top: auto; padding-top: 14px; }
+
+    .sec-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 7px; color: var(--accent);
+      letter-spacing: 1.5px; margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* Upload */
+    .upload-btn {
+      display: block; width: 100%; padding: 11px 8px;
+      background: transparent; border: 2px solid var(--accent);
+      color: var(--accent);
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      letter-spacing: 1px; cursor: pointer; transition: all .15s;
+    }
+    .upload-btn:hover { background: var(--accent); color: #fff; box-shadow: 0 0 16px var(--glow); }
+
+    /* Sliders */
+    .sl-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .sl-row:last-child { margin-bottom: 0; }
+    .sl-hdr { display: flex; justify-content: space-between; font-size: 10px; }
+    .sl-name { color: var(--dim); }
+    .sl-val  { color: var(--cyan); min-width: 44px; text-align: right; }
+
+    input[type=range] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 5px; background: var(--border); outline: none; cursor: pointer;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none; appearance: none;
+      width: 14px; height: 14px; background: var(--accent);
+      border: 2px solid var(--bg); box-shadow: 0 0 7px var(--glow); cursor: pointer;
+    }
+    input[type=range]::-moz-range-thumb {
+      width: 14px; height: 14px; background: var(--accent);
+      border: 2px solid var(--bg); box-shadow: 0 0 7px var(--glow); cursor: pointer;
+    }
+
+    /* Color mode grid */
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .mode-btn {
+      padding: 9px 4px;
+      background: transparent; border: 1px solid var(--border);
+      color: var(--dim);
+      font-family: 'Share Tech Mono', monospace; font-size: 10px;
+      cursor: pointer; transition: all .12s; line-height: 1.4; text-align: center;
+    }
+    .mode-btn:hover { border-color: var(--text); color: var(--text); }
+
+    /* Active state colours per mode */
+    .mode-btn.active[data-mode="full"]      { border-color: var(--cyan);  color: var(--cyan);  background: rgba(0,229,255,.07);  box-shadow: 0 0 8px rgba(0,229,255,.3); }
+    .mode-btn.active[data-mode="matrix"]    { border-color: var(--green); color: var(--green); background: rgba(0,255,65,.07);   box-shadow: 0 0 8px rgba(0,255,65,.3); }
+    .mode-btn.active[data-mode="amber"]     { border-color: var(--amber); color: var(--amber); background: rgba(255,179,0,.07);  box-shadow: 0 0 8px rgba(255,179,0,.3); }
+    .mode-btn.active[data-mode="cyber"]     { border-color: #00fff7;      color: #00fff7;      background: rgba(0,255,247,.07);  box-shadow: 0 0 8px rgba(0,255,247,.3); }
+    .mode-btn.active[data-mode="gameboy"]   { border-color: #8bac0f;      color: #8bac0f;      background: rgba(139,172,15,.07); box-shadow: 0 0 8px rgba(139,172,15,.3); }
+    .mode-btn.active[data-mode="blueprint"] { border-color: #4488ff;      color: #4488ff;      background: rgba(68,136,255,.07); box-shadow: 0 0 8px rgba(68,136,255,.3); }
+    .mode-btn.active[data-mode="raccoin"]   { border-color: #c8bfdf;      color: #c8bfdf;      background: rgba(200,191,223,.07);box-shadow: 0 0 8px rgba(200,191,223,.3); }
+    .mode-btn.active[data-mode="vhs"]       { border-color: var(--pink);  color: var(--pink);  background: rgba(255,68,221,.07); box-shadow: 0 0 8px rgba(255,68,221,.3); }
+
+    /* Export */
+    .export-btn {
+      display: block; width: 100%; padding: 13px;
+      background: var(--accent); border: none; color: #fff;
+      font-family: 'Press Start 2P', monospace; font-size: 7px;
+      letter-spacing: 1px; cursor: pointer; transition: all .15s;
+      box-shadow: 0 4px 0 var(--accent2);
+    }
+    .export-btn:hover:not(:disabled) { background: #8b5cf6; box-shadow: 0 4px 0 #4c1d95, 0 0 22px var(--glow); }
+    .export-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
+    .export-btn:disabled { background: var(--border); color: var(--dim); box-shadow: none; cursor: not-allowed; }
+
+    /* ── Canvas area ─────────────────────────────── */
+    .canvas-wrap {
+      flex: 1; position: relative;
+      display: flex; align-items: center; justify-content: center;
+      overflow: hidden; background: #040408;
+    }
+    /* Scanline overlay */
+    .canvas-wrap::before {
+      content: '';
+      position: absolute; inset: 0; z-index: 2; pointer-events: none;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.12) 3px, rgba(0,0,0,.12) 4px);
+    }
+
+    #outputCanvas {
+      max-width: 100%; max-height: 100%;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+      display: none; z-index: 1;
+    }
+
+    /* Drop zone */
+    .drop-zone {
+      position: absolute; inset: 0; z-index: 3;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+      pointer-events: none;
+    }
+    .drop-icon {
+      font-size: 56px; line-height: 1;
+      filter: grayscale(1) opacity(.35);
+    }
+    .drop-text {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px; color: var(--dim);
+      text-align: center; line-height: 2.2; letter-spacing: 1px;
+    }
+
+    /* Drag-over overlay */
+    .drag-overlay {
+      position: absolute; inset: 0; z-index: 10;
+      display: none;
+      align-items: center; justify-content: center;
+      background: rgba(124,58,237,.06);
+      border: 3px dashed var(--accent);
+      pointer-events: none;
+    }
+    .drag-overlay span {
+      font-family: 'Press Start 2P', monospace;
+      font-size: clamp(12px, 2.5vw, 22px);
+      color: var(--accent);
+      text-shadow: 0 0 20px var(--glow);
+    }
+    .canvas-wrap.drag-over .drag-overlay { display: flex; }
+
+    /* Info chip */
+    .info-chip {
+      position: absolute; bottom: 12px; right: 14px; z-index: 5;
+      background: rgba(0,0,0,.75); border: 1px solid var(--border);
+      padding: 5px 10px; font-size: 10px; color: var(--dim);
+      display: none;
+    }
+
+    /* ── Responsive ──────────────────────────────── */
+    @media (max-width: 680px) {
+      .app { flex-direction: column; height: auto; overflow-y: auto; }
+      aside { width: 100%; border-right: none; border-bottom: 2px solid var(--border); overflow: visible; }
+      .canvas-wrap { min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div>
+    <h1>▓▒ PIXEL FORGE</h1>
+    <div class="sub">// pixel art converter v1.0</div>
+  </div>
+  <div class="corner-deco">
+    8 MODES<br>PNG EXPORT
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- ── Sidebar ── -->
+  <aside>
+
+    <div class="pane">
+      <div class="sec-label">INPUT</div>
+      <button class="upload-btn" id="uploadBtn">[ LOAD IMAGE ]</button>
+      <input type="file" id="fileInput" accept="image/*" style="display:none">
+    </div>
+
+    <div class="pane">
+      <div class="sec-label">PIXELATE</div>
+      <div class="sl-row">
+        <div class="sl-hdr">
+          <span class="sl-name">BLOCK SIZE</span>
+          <span class="sl-val" id="blockVal">8 px</span>
+        </div>
+        <input type="range" id="blockSlider" min="2" max="40" value="8">
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="sec-label">ADJUST</div>
+      <div class="sl-row">
+        <div class="sl-hdr">
+          <span class="sl-name">CONTRAST</span>
+          <span class="sl-val" id="contrastVal">0</span>
+        </div>
+        <input type="range" id="contrastSlider" min="-100" max="100" value="0">
+      </div>
+      <div class="sl-row">
+        <div class="sl-hdr">
+          <span class="sl-name">SATURATION</span>
+          <span class="sl-val" id="satVal">1.0×</span>
+        </div>
+        <input type="range" id="satSlider" min="0" max="30" value="10">
+      </div>
+    </div>
+
+    <div class="pane">
+      <div class="sec-label">COLOR MODE</div>
+      <div class="mode-grid">
+        <button class="mode-btn active" data-mode="full">FULL<br>COLOR</button>
+        <button class="mode-btn"        data-mode="matrix">MATRIX<br>GREEN</button>
+        <button class="mode-btn"        data-mode="amber">AMBER<br>CRT</button>
+        <button class="mode-btn"        data-mode="cyber">CYBER<br>CYAN</button>
+        <button class="mode-btn"        data-mode="gameboy">GAME<br>BOY</button>
+        <button class="mode-btn"        data-mode="blueprint">BLUE<br>PRINT</button>
+        <button class="mode-btn"        data-mode="raccoin">RAC<br>COIN</button>
+        <button class="mode-btn"        data-mode="vhs">VHS<br>GLITCH</button>
+      </div>
+    </div>
+
+    <div class="pane">
+      <button class="export-btn" id="exportBtn" disabled>[ EXPORT PNG ]</button>
+    </div>
+
+  </aside>
+
+  <!-- ── Canvas area ── -->
+  <div class="canvas-wrap" id="canvasWrap">
+    <div class="drop-zone" id="dropZone">
+      <div class="drop-icon">🎮</div>
+      <div class="drop-text">DRAG &amp; DROP AN IMAGE<br>OR CLICK LOAD IMAGE<br>TO BEGIN</div>
+    </div>
+    <canvas id="outputCanvas"></canvas>
+    <div class="drag-overlay"><span>DROP TO PIXELATE</span></div>
+    <div class="info-chip" id="infoChip"></div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+
+// ── State ────────────────────────────────────────────────────────────
+const state = {
+  image:      null,
+  blockSize:  8,
+  contrast:   0,       // -100 to +100
+  saturation: 1.0,     // 0× to 3.0×
+  colorMode:  'full',
+};
+
+// ── DOM refs ─────────────────────────────────────────────────────────
+const fileInput     = document.getElementById('fileInput');
+const uploadBtn     = document.getElementById('uploadBtn');
+const blockSlider   = document.getElementById('blockSlider');
+const blockVal      = document.getElementById('blockVal');
+const contrastSlider= document.getElementById('contrastSlider');
+const contrastVal   = document.getElementById('contrastVal');
+const satSlider     = document.getElementById('satSlider');
+const satVal        = document.getElementById('satVal');
+const outputCanvas  = document.getElementById('outputCanvas');
+const canvasWrap    = document.getElementById('canvasWrap');
+const dropZone      = document.getElementById('dropZone');
+const exportBtn     = document.getElementById('exportBtn');
+const infoChip      = document.getElementById('infoChip');
+
+const ctx = outputCanvas.getContext('2d', { willReadFrequently: true });
+
+// ── File upload ──────────────────────────────────────────────────────
+uploadBtn.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+
+function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    state.image = img;
+    URL.revokeObjectURL(url);
+    render();
+    exportBtn.disabled = false;
+    dropZone.style.display = 'none';
+    outputCanvas.style.display = 'block';
+  };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
+}
+
+// ── Drag & drop ──────────────────────────────────────────────────────
+canvasWrap.addEventListener('dragenter', e => { e.preventDefault(); canvasWrap.classList.add('drag-over'); });
+canvasWrap.addEventListener('dragover',  e => { e.preventDefault(); });
+canvasWrap.addEventListener('dragleave', e => { if (!canvasWrap.contains(e.relatedTarget)) canvasWrap.classList.remove('drag-over'); });
+canvasWrap.addEventListener('drop', e => {
+  e.preventDefault();
+  canvasWrap.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) loadFile(file);
+});
+
+// ── Sliders ──────────────────────────────────────────────────────────
+blockSlider.addEventListener('input', () => {
+  state.blockSize = +blockSlider.value;
+  blockVal.textContent = state.blockSize + ' px';
+  render();
+});
+
+contrastSlider.addEventListener('input', () => {
+  state.contrast = +contrastSlider.value;
+  contrastVal.textContent = (state.contrast > 0 ? '+' : '') + state.contrast;
+  render();
+});
+
+satSlider.addEventListener('input', () => {
+  state.saturation = +satSlider.value / 10;
+  satVal.textContent = state.saturation.toFixed(1) + '×';
+  render();
+});
+
+// ── Color mode buttons ───────────────────────────────────────────────
+document.querySelectorAll('.mode-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    state.colorMode = btn.dataset.mode;
+    render();
+  });
+});
+
+// ── Export ───────────────────────────────────────────────────────────
+exportBtn.addEventListener('click', exportPNG);
+
+function exportPNG() {
+  if (!state.image) return;
+  const exportC = document.createElement('canvas');
+  const exportCtx = exportC.getContext('2d', { willReadFrequently: true });
+  const { image, blockSize } = state;
+  const W = image.naturalWidth, H = image.naturalHeight;
+  const pW = Math.max(1, Math.ceil(W / blockSize));
+  const pH = Math.max(1, Math.ceil(H / blockSize));
+
+  // Downsample
+  exportC.width = pW; exportC.height = pH;
+  exportCtx.imageSmoothingEnabled = true;
+  exportCtx.imageSmoothingQuality = 'high';
+  exportCtx.drawImage(image, 0, 0, pW, pH);
+
+  const id = exportCtx.getImageData(0, 0, pW, pH);
+  applyAdjustments(id.data, state.contrast, state.saturation);
+  applyColorMode(id, state.colorMode, pW, pH);
+  exportCtx.putImageData(id, 0, 0);
+
+  // Scale back to original size (each pixel → blockSize block)
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const outCtx = out.getContext('2d');
+  outCtx.imageSmoothingEnabled = false;
+  outCtx.drawImage(exportC, 0, 0, W, H);
+
+  const a = document.createElement('a');
+  a.download = `pixel-forge-${state.colorMode}-${blockSize}px.png`;
+  a.href = out.toDataURL('image/png');
+  a.click();
+}
+
+// ── Render pipeline ──────────────────────────────────────────────────
+function render() {
+  if (!state.image) return;
+
+  const { image, blockSize } = state;
+  const W = image.naturalWidth, H = image.naturalHeight;
+  const pW = Math.max(1, Math.ceil(W / blockSize));
+  const pH = Math.max(1, Math.ceil(H / blockSize));
+
+  // Downsample to pixel-grid size
+  const tmp = document.createElement('canvas');
+  tmp.width = pW; tmp.height = pH;
+  const tctx = tmp.getContext('2d', { willReadFrequently: true });
+  tctx.imageSmoothingEnabled = true;
+  tctx.imageSmoothingQuality = 'high';
+  tctx.drawImage(image, 0, 0, pW, pH);
+
+  const id = tctx.getImageData(0, 0, pW, pH);
+  applyAdjustments(id.data, state.contrast, state.saturation);
+  applyColorMode(id, state.colorMode, pW, pH);
+  tctx.putImageData(id, 0, 0);
+
+  // Upscale to original resolution (nearest-neighbour → crisp blocks)
+  outputCanvas.width  = W;
+  outputCanvas.height = H;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmp, 0, 0, W, H);
+
+  infoChip.style.display = 'block';
+  infoChip.textContent = `${W}×${H}  |  ${pW}×${pH} blocks  |  ${blockSize}px`;
+}
+
+// ── Image adjustments ────────────────────────────────────────────────
+function applyAdjustments(data, contrast, sat) {
+  // contrast factor using the classic 259-formula
+  const cf = (259 * (contrast + 255)) / (255 * (259 - contrast));
+
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2];
+
+    // Contrast
+    r = cf * (r - 128) + 128;
+    g = cf * (g - 128) + 128;
+    b = cf * (b - 128) + 128;
+
+    // Saturation
+    const lum = 0.299*r + 0.587*g + 0.114*b;
+    r = lum + sat * (r - lum);
+    g = lum + sat * (g - lum);
+    b = lum + sat * (b - lum);
+
+    data[i]   = clamp(r);
+    data[i+1] = clamp(g);
+    data[i+2] = clamp(b);
+  }
+}
+
+// ── Color mode transforms ────────────────────────────────────────────
+function applyColorMode(imageData, mode, width, height) {
+  const d = imageData.data;
+  if (mode === 'full') return;
+
+  if (mode === 'matrix') {
+    for (let i = 0; i < d.length; i += 4) {
+      const g = luma(d[i], d[i+1], d[i+2]);
+      d[i]   = Math.round(g * 0.08);
+      d[i+1] = clamp(g);
+      d[i+2] = Math.round(g * 0.18);
+    }
+    return;
+  }
+
+  if (mode === 'amber') {
+    for (let i = 0; i < d.length; i += 4) {
+      const g = luma(d[i], d[i+1], d[i+2]);
+      d[i]   = clamp(g * 1.10);
+      d[i+1] = clamp(g * 0.48);
+      d[i+2] = clamp(g * 0.02);
+    }
+    return;
+  }
+
+  if (mode === 'cyber') {
+    for (let i = 0; i < d.length; i += 4) {
+      const g = luma(d[i], d[i+1], d[i+2]);
+      d[i]   = clamp(g * 0.06);
+      d[i+1] = clamp(g * 1.08);
+      d[i+2] = clamp(g * 1.18);
+    }
+    return;
+  }
+
+  if (mode === 'gameboy') {
+    // Classic DMG palette — dark to light
+    const pal = [[15,56,15],[48,98,48],[139,172,15],[155,188,15]];
+    for (let i = 0; i < d.length; i += 4) {
+      const g = luma(d[i], d[i+1], d[i+2]);
+      const idx = Math.min(3, g >> 6);   // >> 6 == Math.floor(g/64)
+      d[i]   = pal[idx][0];
+      d[i+1] = pal[idx][1];
+      d[i+2] = pal[idx][2];
+    }
+    return;
+  }
+
+  if (mode === 'blueprint') {
+    for (let i = 0; i < d.length; i += 4) {
+      const g = luma(d[i], d[i+1], d[i+2]);
+      const t = 255 - g;                 // invert: bright lines on dark blue
+      d[i]   = clamp(8  + t * 0.22);
+      d[i+1] = clamp(28 + t * 0.52);
+      d[i+2] = clamp(72 + t * 0.75);
+    }
+    return;
+  }
+
+  if (mode === 'raccoin') {
+    // Raccoon-inspired 5-stop palette: deep shadow → silver → coin-gold highlight
+    const pal = [
+      [10,  8, 16],   // near-black (midnight)
+      [50, 46, 64],   // dark slate-gray (fur shadow)
+      [112,106,132],  // mid gray-purple (body)
+      [188,182,206],  // silver-lavender (mask)
+      [224,208,148],  // muted coin-gold (bright)
+    ];
+    for (let i = 0; i < d.length; i += 4) {
+      const g = luma(d[i], d[i+1], d[i+2]);
+      const idx = Math.min(4, Math.floor(g / 52));
+      d[i]   = pal[idx][0];
+      d[i+1] = pal[idx][1];
+      d[i+2] = pal[idx][2];
+    }
+    return;
+  }
+
+  if (mode === 'vhs') {
+    const orig = new Uint8ClampedArray(d);
+    const shift = 3;
+
+    // Pre-compute per-row horizontal glitch offsets
+    const rowShift = new Int32Array(height);
+    for (let y = 0; y < height; y++) {
+      if (Math.random() < 0.07) rowShift[y] = (Math.random() * 12 - 6) | 0;
+    }
+
+    for (let y = 0; y < height; y++) {
+      const rs = rowShift[y];
+      const scanDark = (y % 3 === 0) ? 0.62 : 1;
+
+      for (let x = 0; x < width; x++) {
+        const i = (y * width + x) * 4;
+
+        // Red channel: shifted right (+shift)
+        const rx = Math.min(width-1, Math.max(0, x + shift + rs));
+        const ri = (y * width + rx) * 4;
+
+        // Blue channel: shifted left (-shift)
+        const bx = Math.min(width-1, Math.max(0, x - shift + rs));
+        const bi = (y * width + bx) * 4;
+
+        // Green picks up a slight chroma bleed from neighbours
+        const gi = (y * width + Math.min(width-1, Math.max(0, x + rs))) * 4;
+
+        d[i]   = clamp(orig[ri]   * scanDark);
+        d[i+1] = clamp((orig[gi+1] + 12) * scanDark);
+        d[i+2] = clamp(orig[bi+2] * scanDark);
+      }
+    }
+    return;
+  }
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────
+function luma(r, g, b) { return 0.299*r + 0.587*g + 0.114*b; }
+function clamp(v) { return v < 0 ? 0 : v > 255 ? 255 : Math.round(v); }
+</script>
+</body>
+</html>
