@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PIXEL FORGE — Pixel Art Converter</title>
+  <title>DAN'S PIXEL FORGE</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Share+Tech+Mono&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    /* ── Dark theme (default) ──────────────────────── */
     :root, [data-theme="dark"] {
       --bg:           #07070f;
       --panel:        #0c0c1a;
@@ -25,21 +24,13 @@
       --dim:          #555580;
       --canvas-bg:    #040408;
       --info-bg:      rgba(0,0,0,.75);
-      --scanline:     rgba(0,0,0,.12);
-      --header-grad:  linear-gradient(180deg, #10102a 0%, #07070f 100%);
+      --scanline-css: rgba(0,0,0,.12);
+      --header-grad:  linear-gradient(180deg,#10102a 0%,#07070f 100%);
       --slider-track: #1c1c38;
       --thumb-border: #07070f;
-
-      /* fixed neon colours — same in both themes */
-      --green:  #00ff41;
-      --cyan:   #00e5ff;
-      --amber:  #ffb300;
-      --pink:   #ff44dd;
-      --h1-color: var(--cyan);
-      --h1-shadow: 0 0 8px rgba(0,229,255,.9), 0 0 28px rgba(0,229,255,.4);
+      --h1-color:     #00e5ff;
+      --h1-shadow:    0 0 8px rgba(0,229,255,.9),0 0 28px rgba(0,229,255,.4);
     }
-
-    /* ── Light theme ───────────────────────────────── */
     [data-theme="light"] {
       --bg:           #f0f0f8;
       --panel:        #ffffff;
@@ -54,213 +45,157 @@
       --dim:          #7070a0;
       --canvas-bg:    #e4e4f0;
       --info-bg:      rgba(255,255,255,.9);
-      --scanline:     rgba(0,0,0,.04);
-      --header-grad:  linear-gradient(180deg, #ddddf8 0%, #f0f0f8 100%);
+      --scanline-css: rgba(0,0,0,.04);
+      --header-grad:  linear-gradient(180deg,#ddddf8 0%,#f0f0f8 100%);
       --slider-track: #d0d0e8;
       --thumb-border: #f0f0f8;
-
-      --h1-color: var(--accent);
-      --h1-shadow: 0 0 6px rgba(109,40,217,.35), 0 2px 0 rgba(109,40,217,.15);
+      --h1-color:     var(--accent);
+      --h1-shadow:    0 0 6px rgba(109,40,217,.35),0 2px 0 rgba(109,40,217,.15);
     }
 
-    html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: 'Share Tech Mono', monospace; font-size: 13px; transition: background .25s, color .25s; }
+    html,body { height:100%; overflow:hidden; background:var(--bg); color:var(--text); font-family:'Share Tech Mono',monospace; font-size:13px; transition:background .25s,color .25s; }
 
-    /* ── Header ──────────────────────────────────── */
     header {
-      background: var(--header-grad);
-      border-bottom: 2px solid var(--accent);
-      padding: 16px 24px;
-      display: flex; align-items: center; justify-content: space-between;
-      position: relative; overflow: hidden; flex-shrink: 0;
-      transition: background .25s, border-color .25s;
+      background:var(--header-grad); border-bottom:2px solid var(--accent);
+      padding:16px 24px; display:flex; align-items:center; justify-content:space-between;
+      position:relative; overflow:hidden; flex-shrink:0; transition:background .25s,border-color .25s;
     }
-    header::after {
-      content: '';
-      position: absolute; inset: 0;
-      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(124,58,237,.04) 3px, rgba(124,58,237,.04) 4px);
-      pointer-events: none;
-    }
-    [data-theme="light"] header::after { opacity: .4; }
-
-    header h1 {
-      font-family: 'Press Start 2P', monospace;
-      font-size: clamp(11px, 2.2vw, 20px);
-      color: var(--h1-color);
-      text-shadow: var(--h1-shadow);
-      letter-spacing: 2px;
-    }
-    header .sub { font-size: 10px; color: var(--dim); letter-spacing: 1px; margin-top: 6px; }
-
-    /* Theme toggle */
-    .header-right { display: flex; align-items: center; gap: 16px; }
-    .corner-deco {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 8px; color: var(--dim);
-      text-align: right; line-height: 2;
-    }
+    header::after { content:''; position:absolute; inset:0; background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(124,58,237,.04) 3px,rgba(124,58,237,.04) 4px); pointer-events:none; }
+    [data-theme="light"] header::after { opacity:.4; }
+    header h1 { font-family:'Press Start 2P',monospace; font-size:clamp(10px,2vw,18px); color:var(--h1-color); text-shadow:var(--h1-shadow); letter-spacing:2px; }
+    header .sub { font-size:10px; color:var(--dim); letter-spacing:1px; margin-top:6px; }
+    .header-right { display:flex; align-items:center; gap:16px; flex-shrink:0; }
+    .corner-deco { font-family:'Press Start 2P',monospace; font-size:7px; color:var(--dim); text-align:right; line-height:2.2; }
     .theme-toggle {
-      display: flex; align-items: center; gap: 8px;
-      background: var(--panel); border: 1.5px solid var(--border2);
-      padding: 6px 10px; cursor: pointer;
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      color: var(--dim); letter-spacing: 1px;
-      transition: all .15s; flex-shrink: 0;
+      display:flex; align-items:center; gap:8px; background:var(--panel);
+      border:1.5px solid var(--border2); padding:6px 10px; cursor:pointer;
+      font-family:'Press Start 2P',monospace; font-size:7px; color:var(--dim);
+      letter-spacing:1px; transition:all .15s; flex-shrink:0;
     }
-    .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
-    .theme-toggle .icon { font-size: 14px; line-height: 1; }
+    .theme-toggle:hover { border-color:var(--accent); color:var(--accent); }
+    .theme-toggle .icon { font-size:14px; line-height:1; }
 
-    /* ── Layout ──────────────────────────────────── */
-    .app { display: flex; height: calc(100vh - 74px); }
+    .app { display:flex; height:calc(100vh - 74px); }
 
-    /* ── Sidebar ─────────────────────────────────── */
     aside {
-      width: 272px; flex-shrink: 0;
-      background: var(--panel);
-      border-right: 2px solid var(--border);
-      display: flex; flex-direction: column; gap: 0;
-      overflow-y: auto; overflow-x: hidden;
-      transition: background .25s, border-color .25s;
+      width:276px; flex-shrink:0; background:var(--panel);
+      border-right:2px solid var(--border); display:flex; flex-direction:column;
+      overflow-y:auto; overflow-x:hidden; transition:background .25s,border-color .25s;
     }
-    aside::-webkit-scrollbar { width: 3px; }
-    aside::-webkit-scrollbar-thumb { background: var(--border2); }
+    aside::-webkit-scrollbar { width:3px; }
+    aside::-webkit-scrollbar-thumb { background:var(--border2); }
 
-    .pane { padding: 16px 18px; border-bottom: 1px solid var(--border); }
-    .pane:last-child { border-bottom: none; margin-top: auto; padding-top: 14px; }
+    .pane { padding:14px 16px; border-bottom:1px solid var(--border); }
 
     .sec-label {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 7px; color: var(--accent);
-      letter-spacing: 1.5px; margin-bottom: 12px;
-      display: flex; align-items: center; gap: 8px;
+      font-family:'Press Start 2P',monospace; font-size:7px; color:var(--accent);
+      letter-spacing:1.5px; margin-bottom:10px; display:flex; align-items:center; gap:8px;
     }
-    .sec-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .sec-label::after { content:''; flex:1; height:1px; background:var(--border); }
 
-    /* Upload */
     .upload-btn {
-      display: block; width: 100%; padding: 11px 8px;
-      background: transparent; border: 2px solid var(--accent);
-      color: var(--accent);
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      letter-spacing: 1px; cursor: pointer; transition: all .15s;
+      display:block; width:100%; padding:11px 8px; background:transparent;
+      border:2px solid var(--accent); color:var(--accent);
+      font-family:'Press Start 2P',monospace; font-size:7px;
+      letter-spacing:1px; cursor:pointer; transition:all .15s;
     }
-    .upload-btn:hover { background: var(--accent); color: #fff; box-shadow: 0 0 16px var(--glow); }
+    .upload-btn:hover { background:var(--accent); color:#fff; box-shadow:0 0 16px var(--glow); }
 
-    /* Sliders */
-    .sl-row { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
-    .sl-row:last-child { margin-bottom: 0; }
-    .sl-hdr { display: flex; justify-content: space-between; font-size: 10px; }
-    .sl-name { color: var(--dim); }
-    .sl-val  { color: var(--accent); min-width: 44px; text-align: right; font-weight: bold; }
+    .sl-row { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
+    .sl-row:last-child { margin-bottom:0; }
+    .sl-hdr { display:flex; justify-content:space-between; font-size:10px; }
+    .sl-name { color:var(--dim); }
+    .sl-val  { color:var(--accent); min-width:44px; text-align:right; font-weight:bold; }
 
     input[type=range] {
-      -webkit-appearance: none; appearance: none;
-      width: 100%; height: 5px; background: var(--slider-track); outline: none; cursor: pointer;
-      transition: background .25s;
+      -webkit-appearance:none; appearance:none;
+      width:100%; height:5px; background:var(--slider-track); outline:none; cursor:pointer; transition:background .25s;
     }
     input[type=range]::-webkit-slider-thumb {
-      -webkit-appearance: none; appearance: none;
-      width: 14px; height: 14px; background: var(--accent);
-      border: 2px solid var(--thumb-border); box-shadow: 0 0 7px var(--glow); cursor: pointer;
+      -webkit-appearance:none; appearance:none; width:14px; height:14px;
+      background:var(--accent); border:2px solid var(--thumb-border); box-shadow:0 0 7px var(--glow); cursor:pointer;
     }
     input[type=range]::-moz-range-thumb {
-      width: 14px; height: 14px; background: var(--accent);
-      border: 2px solid var(--thumb-border); box-shadow: 0 0 7px var(--glow); cursor: pointer;
+      width:14px; height:14px; background:var(--accent);
+      border:2px solid var(--thumb-border); box-shadow:0 0 7px var(--glow); cursor:pointer;
     }
+
+    /* Dropdown */
+    .retro-select {
+      width:100%; padding:7px 28px 7px 8px; background:var(--panel2);
+      border:1px solid var(--border2); color:var(--text);
+      font-family:'Share Tech Mono',monospace; font-size:10px;
+      cursor:pointer; outline:none; -webkit-appearance:none; appearance:none; transition:border-color .15s;
+      background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%237c3aed'/></svg>");
+      background-repeat:no-repeat; background-position:right 9px center;
+    }
+    .retro-select:focus { border-color:var(--accent); }
+    [data-theme="light"] .retro-select { background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6'><path d='M0 0l5 6 5-6z' fill='%236d28d9'/></svg>"); }
+
+    /* Toggle switch */
+    .toggle-row { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .toggle { position:relative; flex-shrink:0; width:40px; height:22px; cursor:pointer; }
+    .toggle input { position:absolute; opacity:0; width:0; height:0; }
+    .t-track { position:absolute; inset:0; background:var(--border2); transition:background .2s; }
+    .t-thumb { position:absolute; top:3px; left:3px; width:16px; height:16px; background:var(--dim); transition:transform .2s,background .2s; }
+    .toggle input:checked + .t-track { background:var(--accent); }
+    .toggle input:checked + .t-track .t-thumb { transform:translateX(18px); background:#fff; }
 
     /* Color mode grid */
-    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+    .mode-grid { display:grid; grid-template-columns:1fr 1fr; gap:5px; }
     .mode-btn {
-      padding: 9px 4px;
-      background: transparent; border: 1px solid var(--border);
-      color: var(--dim);
-      font-family: 'Share Tech Mono', monospace; font-size: 10px;
-      cursor: pointer; transition: all .12s; line-height: 1.4; text-align: center;
+      padding:8px 4px; background:transparent; border:1px solid var(--border);
+      color:var(--dim); font-family:'Share Tech Mono',monospace; font-size:10px;
+      cursor:pointer; transition:all .12s; line-height:1.4; text-align:center;
     }
-    .mode-btn:hover { border-color: var(--border2); color: var(--text); }
+    .mode-btn:hover { border-color:var(--border2); color:var(--text); }
 
-    /* Active colours — same in both themes (neon always pops) */
-    .mode-btn.active[data-mode="full"]      { border-color: #00b4d8;  color: #00b4d8;  background: rgba(0,180,216,.09);  box-shadow: 0 0 8px rgba(0,180,216,.25); }
-    .mode-btn.active[data-mode="matrix"]    { border-color: #22c55e;  color: #22c55e;  background: rgba(34,197,94,.09);  box-shadow: 0 0 8px rgba(34,197,94,.25); }
-    .mode-btn.active[data-mode="amber"]     { border-color: #f59e0b;  color: #f59e0b;  background: rgba(245,158,11,.09); box-shadow: 0 0 8px rgba(245,158,11,.25); }
-    .mode-btn.active[data-mode="cyber"]     { border-color: #06b6d4;  color: #06b6d4;  background: rgba(6,182,212,.09);  box-shadow: 0 0 8px rgba(6,182,212,.25); }
-    .mode-btn.active[data-mode="gameboy"]   { border-color: #84cc16;  color: #84cc16;  background: rgba(132,204,22,.09); box-shadow: 0 0 8px rgba(132,204,22,.25); }
-    .mode-btn.active[data-mode="blueprint"] { border-color: #3b82f6;  color: #3b82f6;  background: rgba(59,130,246,.09); box-shadow: 0 0 8px rgba(59,130,246,.25); }
-    .mode-btn.active[data-mode="raccoin"]   { border-color: #a78bfa;  color: #a78bfa;  background: rgba(167,139,250,.09);box-shadow: 0 0 8px rgba(167,139,250,.25); }
-    .mode-btn.active[data-mode="vhs"]       { border-color: #ec4899;  color: #ec4899;  background: rgba(236,72,153,.09); box-shadow: 0 0 8px rgba(236,72,153,.25); }
+    .mode-btn.active[data-mode="full"]      { border-color:#00b4d8; color:#00b4d8; background:rgba(0,180,216,.09);   box-shadow:0 0 8px rgba(0,180,216,.25); }
+    .mode-btn.active[data-mode="matrix"]    { border-color:#22c55e; color:#22c55e; background:rgba(34,197,94,.09);   box-shadow:0 0 8px rgba(34,197,94,.25); }
+    .mode-btn.active[data-mode="amber"]     { border-color:#f59e0b; color:#f59e0b; background:rgba(245,158,11,.09);  box-shadow:0 0 8px rgba(245,158,11,.25); }
+    .mode-btn.active[data-mode="cyber"]     { border-color:#06b6d4; color:#06b6d4; background:rgba(6,182,212,.09);   box-shadow:0 0 8px rgba(6,182,212,.25); }
+    .mode-btn.active[data-mode="gameboy"]   { border-color:#84cc16; color:#84cc16; background:rgba(132,204,22,.09);  box-shadow:0 0 8px rgba(132,204,22,.25); }
+    .mode-btn.active[data-mode="blueprint"] { border-color:#3b82f6; color:#3b82f6; background:rgba(59,130,246,.09);  box-shadow:0 0 8px rgba(59,130,246,.25); }
+    .mode-btn.active[data-mode="raccoin"]   { border-color:#a78bfa; color:#a78bfa; background:rgba(167,139,250,.09); box-shadow:0 0 8px rgba(167,139,250,.25); }
+    .mode-btn.active[data-mode="vhs"]       { border-color:#ec4899; color:#ec4899; background:rgba(236,72,153,.09);  box-shadow:0 0 8px rgba(236,72,153,.25); }
+    .mode-btn.active[data-mode="nes"]       { border-color:#e87428; color:#e87428; background:rgba(232,116,40,.09);  box-shadow:0 0 8px rgba(232,116,40,.25); }
+    .mode-btn.active[data-mode="c64"]       { border-color:#7b71c4; color:#7b71c4; background:rgba(123,113,196,.09); box-shadow:0 0 8px rgba(123,113,196,.25); }
+    .mode-btn.active[data-mode="cga"]       { border-color:#ff55ff; color:#ff55ff; background:rgba(255,85,255,.09);  box-shadow:0 0 8px rgba(255,85,255,.25); }
 
-    /* Export */
     .export-btn {
-      display: block; width: 100%; padding: 13px;
-      background: var(--accent); border: none; color: #fff;
-      font-family: 'Press Start 2P', monospace; font-size: 7px;
-      letter-spacing: 1px; cursor: pointer; transition: all .15s;
-      box-shadow: 0 4px 0 var(--accent2);
+      display:block; width:100%; padding:13px; background:var(--accent);
+      border:none; color:#fff; font-family:'Press Start 2P',monospace; font-size:7px;
+      letter-spacing:1px; cursor:pointer; transition:all .15s; box-shadow:0 4px 0 var(--accent2);
     }
-    .export-btn:hover:not(:disabled) { background: var(--accent-hi); box-shadow: 0 4px 0 var(--accent2), 0 0 22px var(--glow); }
-    .export-btn:active:not(:disabled) { transform: translateY(4px); box-shadow: none; }
-    .export-btn:disabled { background: var(--border); color: var(--dim); box-shadow: none; cursor: not-allowed; }
+    .export-btn:hover:not(:disabled) { background:var(--accent-hi); box-shadow:0 4px 0 var(--accent2),0 0 22px var(--glow); }
+    .export-btn:active:not(:disabled) { transform:translateY(4px); box-shadow:none; }
+    .export-btn:disabled { background:var(--border); color:var(--dim); box-shadow:none; cursor:not-allowed; }
 
-    /* ── Canvas area ─────────────────────────────── */
     .canvas-wrap {
-      flex: 1; position: relative;
-      display: flex; align-items: center; justify-content: center;
-      overflow: hidden; background: var(--canvas-bg);
-      transition: background .25s;
+      flex:1; position:relative; display:flex; align-items:center; justify-content:center;
+      overflow:hidden; background:var(--canvas-bg); transition:background .25s;
     }
     .canvas-wrap::before {
-      content: '';
-      position: absolute; inset: 0; z-index: 2; pointer-events: none;
-      background: repeating-linear-gradient(0deg, transparent, transparent 3px, var(--scanline) 3px, var(--scanline) 4px);
+      content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
+      background:repeating-linear-gradient(0deg,transparent,transparent 3px,var(--scanline-css) 3px,var(--scanline-css) 4px);
     }
+    #outputCanvas { max-width:100%; max-height:100%; image-rendering:pixelated; image-rendering:crisp-edges; display:none; z-index:1; }
 
-    #outputCanvas {
-      max-width: 100%; max-height: 100%;
-      image-rendering: pixelated; image-rendering: crisp-edges;
-      display: none; z-index: 1;
-    }
+    .drop-zone { position:absolute; inset:0; z-index:3; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; pointer-events:none; }
+    .drop-icon { font-size:56px; line-height:1; filter:grayscale(1) opacity(.3); }
+    .drop-text { font-family:'Press Start 2P',monospace; font-size:9px; color:var(--dim); text-align:center; line-height:2.2; letter-spacing:1px; }
 
-    /* Drop zone */
-    .drop-zone {
-      position: absolute; inset: 0; z-index: 3;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center; gap: 20px;
-      pointer-events: none;
-    }
-    .drop-icon { font-size: 56px; line-height: 1; filter: grayscale(1) opacity(.3); }
-    .drop-text {
-      font-family: 'Press Start 2P', monospace;
-      font-size: 9px; color: var(--dim);
-      text-align: center; line-height: 2.2; letter-spacing: 1px;
-    }
+    .drag-overlay { position:absolute; inset:0; z-index:10; display:none; align-items:center; justify-content:center; background:rgba(124,58,237,.06); border:3px dashed var(--accent); pointer-events:none; }
+    .drag-overlay span { font-family:'Press Start 2P',monospace; font-size:clamp(12px,2.5vw,22px); color:var(--accent); text-shadow:0 0 20px var(--glow); }
+    .canvas-wrap.drag-over .drag-overlay { display:flex; }
 
-    /* Drag-over overlay */
-    .drag-overlay {
-      position: absolute; inset: 0; z-index: 10;
-      display: none; align-items: center; justify-content: center;
-      background: rgba(124,58,237,.06); border: 3px dashed var(--accent);
-      pointer-events: none;
-    }
-    .drag-overlay span {
-      font-family: 'Press Start 2P', monospace;
-      font-size: clamp(12px, 2.5vw, 22px);
-      color: var(--accent); text-shadow: 0 0 20px var(--glow);
-    }
-    .canvas-wrap.drag-over .drag-overlay { display: flex; }
+    .info-chip { position:absolute; bottom:12px; right:14px; z-index:5; background:var(--info-bg); border:1px solid var(--border); padding:5px 10px; font-size:10px; color:var(--dim); display:none; transition:background .25s; }
 
-    /* Info chip */
-    .info-chip {
-      position: absolute; bottom: 12px; right: 14px; z-index: 5;
-      background: var(--info-bg); border: 1px solid var(--border);
-      padding: 5px 10px; font-size: 10px; color: var(--dim);
-      display: none; transition: background .25s;
-    }
-
-    /* ── Responsive ──────────────────────────────── */
-    @media (max-width: 680px) {
-      .app { flex-direction: column; height: auto; overflow-y: auto; }
-      aside { width: 100%; border-right: none; border-bottom: 2px solid var(--border); overflow: visible; }
-      .canvas-wrap { min-height: 320px; }
-      .corner-deco { display: none; }
+    @media (max-width:680px) {
+      .app { flex-direction:column; height:auto; overflow-y:auto; }
+      aside { width:100%; border-right:none; border-bottom:2px solid var(--border); overflow:visible; }
+      .canvas-wrap { min-height:320px; }
+      .corner-deco { display:none; }
     }
   </style>
 </head>
@@ -269,104 +204,132 @@
 <header>
   <div>
     <h1>▓▒ DAN'S PIXEL FORGE</h1>
-    <div class="sub">// pixel art converter v1.2</div>
+    <div class="sub">// pixel art converter v1.3</div>
   </div>
   <div class="header-right">
-    <div class="corner-deco">8 MODES<br>PNG EXPORT</div>
-    <button class="theme-toggle" id="themeToggle" title="Toggle light/dark theme">
-      <span class="icon" id="themeIcon">☀️</span>
-      <span id="themeLabel">LIGHT</span>
+    <div class="corner-deco">11 MODES<br>PNG EXPORT</div>
+    <button class="theme-toggle" id="themeToggle">
+      <span class="icon" id="themeIcon">🌙</span>
+      <span id="themeLabel">DARK</span>
     </button>
   </div>
 </header>
 
 <div class="app">
+<aside>
 
-  <!-- ── Sidebar ── -->
-  <aside>
-
-    <div class="pane">
-      <div class="sec-label">INPUT</div>
-      <button class="upload-btn" id="uploadBtn">[ LOAD IMAGE ]</button>
-      <input type="file" id="fileInput" accept="image/*" style="display:none">
-    </div>
-
-    <div class="pane">
-      <div class="sec-label">PIXELATE</div>
-      <div class="sl-row">
-        <div class="sl-hdr">
-          <span class="sl-name">BLOCK SIZE</span>
-          <span class="sl-val" id="blockVal">8 px</span>
-        </div>
-        <input type="range" id="blockSlider" min="2" max="40" value="8">
-      </div>
-    </div>
-
-    <div class="pane">
-      <div class="sec-label">ADJUST</div>
-      <div class="sl-row">
-        <div class="sl-hdr">
-          <span class="sl-name">CONTRAST</span>
-          <span class="sl-val" id="contrastVal">0</span>
-        </div>
-        <input type="range" id="contrastSlider" min="-100" max="100" value="0">
-      </div>
-      <div class="sl-row">
-        <div class="sl-hdr">
-          <span class="sl-name">SATURATION</span>
-          <span class="sl-val" id="satVal">1.0×</span>
-        </div>
-        <input type="range" id="satSlider" min="0" max="30" value="10">
-      </div>
-    </div>
-
-    <div class="pane">
-      <div class="sec-label">COLOR MODE</div>
-      <div class="mode-grid">
-        <button class="mode-btn active" data-mode="full">FULL<br>COLOR</button>
-        <button class="mode-btn"        data-mode="matrix">MATRIX<br>GREEN</button>
-        <button class="mode-btn"        data-mode="amber">AMBER<br>CRT</button>
-        <button class="mode-btn"        data-mode="cyber">CYBER<br>CYAN</button>
-        <button class="mode-btn"        data-mode="gameboy">GAME<br>BOY</button>
-        <button class="mode-btn"        data-mode="blueprint">BLUE<br>PRINT</button>
-        <button class="mode-btn"        data-mode="raccoin">RAC<br>COIN</button>
-        <button class="mode-btn"        data-mode="vhs">VHS<br>GLITCH</button>
-      </div>
-    </div>
-
-    <div class="pane">
-      <button class="export-btn" id="exportBtn" disabled>[ EXPORT PNG ]</button>
-    </div>
-
-  </aside>
-
-  <!-- ── Canvas area ── -->
-  <div class="canvas-wrap" id="canvasWrap">
-    <div class="drop-zone" id="dropZone">
-      <div class="drop-icon">🎮</div>
-      <div class="drop-text">DRAG &amp; DROP AN IMAGE<br>OR CLICK LOAD IMAGE<br>TO BEGIN</div>
-    </div>
-    <canvas id="outputCanvas"></canvas>
-    <div class="drag-overlay"><span>DROP TO PIXELATE</span></div>
-    <div class="info-chip" id="infoChip"></div>
+  <div class="pane">
+    <div class="sec-label">INPUT</div>
+    <button class="upload-btn" id="uploadBtn">[ LOAD IMAGE ]</button>
+    <input type="file" id="fileInput" accept="image/*" style="display:none">
   </div>
 
+  <div class="pane">
+    <div class="sec-label">PIXELATE</div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">BLOCK SIZE</span><span class="sl-val" id="blockVal">8 px</span></div>
+      <input type="range" id="blockSlider" min="2" max="40" value="8">
+    </div>
+  </div>
+
+  <div class="pane">
+    <div class="sec-label">ADJUST</div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">CONTRAST</span><span class="sl-val" id="contrastVal">0</span></div>
+      <input type="range" id="contrastSlider" min="-100" max="100" value="0">
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">SATURATION</span><span class="sl-val" id="satVal">1.0×</span></div>
+      <input type="range" id="satSlider" min="0" max="30" value="10">
+    </div>
+  </div>
+
+  <div class="pane">
+    <div class="sec-label">COLOR MODE</div>
+    <div class="mode-grid">
+      <button class="mode-btn active" data-mode="full">FULL<br>COLOR</button>
+      <button class="mode-btn" data-mode="matrix">MATRIX<br>GREEN</button>
+      <button class="mode-btn" data-mode="amber">AMBER<br>CRT</button>
+      <button class="mode-btn" data-mode="cyber">CYBER<br>CYAN</button>
+      <button class="mode-btn" data-mode="gameboy">GAME<br>BOY</button>
+      <button class="mode-btn" data-mode="blueprint">BLUE<br>PRINT</button>
+      <button class="mode-btn" data-mode="raccoin">RAC<br>COIN</button>
+      <button class="mode-btn" data-mode="vhs">VHS<br>GLITCH</button>
+      <button class="mode-btn" data-mode="nes">NES<br>CLASSIC</button>
+      <button class="mode-btn" data-mode="c64">C64<br>16COL</button>
+      <button class="mode-btn" data-mode="cga">CGA<br>CYBER</button>
+    </div>
+  </div>
+
+  <div class="pane">
+    <div class="sec-label">DITHERING</div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">DITHER TYPE</span></div>
+      <select class="retro-select" id="ditherType">
+        <option value="none">NONE</option>
+        <option value="bayer">ORDERED (BAYER 4×4)</option>
+        <option value="fs">FLOYD-STEINBERG</option>
+      </select>
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">INTENSITY</span><span class="sl-val" id="ditherVal">50%</span></div>
+      <input type="range" id="ditherSlider" min="0" max="100" value="50">
+    </div>
+  </div>
+
+  <div class="pane">
+    <div class="sec-label">CRT EFFECTS</div>
+    <div class="toggle-row">
+      <span class="sl-name">SCANLINES</span>
+      <label class="toggle">
+        <input type="checkbox" id="scanlineToggle">
+        <div class="t-track"><div class="t-thumb"></div></div>
+      </label>
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">INTENSITY</span><span class="sl-val" id="scanlineVal">50%</span></div>
+      <input type="range" id="scanlineSlider" min="0" max="100" value="50">
+    </div>
+  </div>
+
+  <div class="pane">
+    <div class="sec-label">GLITCH</div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">RGB SPLIT</span><span class="sl-val" id="rgbSplitVal">0 px</span></div>
+      <input type="range" id="rgbSplitSlider" min="0" max="20" value="0">
+    </div>
+    <div class="sl-row">
+      <div class="sl-hdr"><span class="sl-name">H. JITTER</span><span class="sl-val" id="jitterVal">0 px</span></div>
+      <input type="range" id="jitterSlider" min="0" max="20" value="0">
+    </div>
+  </div>
+
+  <div class="pane">
+    <button class="export-btn" id="exportBtn" disabled>[ EXPORT PNG ]</button>
+  </div>
+
+</aside>
+
+<div class="canvas-wrap" id="canvasWrap">
+  <div class="drop-zone" id="dropZone">
+    <div class="drop-icon">🎮</div>
+    <div class="drop-text">DRAG &amp; DROP AN IMAGE<br>OR CLICK LOAD IMAGE<br>TO BEGIN</div>
+  </div>
+  <canvas id="outputCanvas"></canvas>
+  <div class="drag-overlay"><span>DROP TO PIXELATE</span></div>
+  <div class="info-chip" id="infoChip"></div>
+</div>
 </div>
 
 <script>
 'use strict';
 
-// ── Theme toggle ─────────────────────────────────────────────────────
-const html        = document.documentElement;
+// ── Theme ────────────────────────────────────────────────────────────
+const html = document.documentElement;
+let isDark = false;
 const themeToggle = document.getElementById('themeToggle');
 const themeIcon   = document.getElementById('themeIcon');
 const themeLabel  = document.getElementById('themeLabel');
-
-let isDark = false;
-html.setAttribute('data-theme', 'light');
-themeIcon.textContent  = '🌙';
-themeLabel.textContent = 'DARK';
-
 themeToggle.addEventListener('click', () => {
   isDark = !isDark;
   html.setAttribute('data-theme', isDark ? 'dark' : 'light');
@@ -374,83 +337,104 @@ themeToggle.addEventListener('click', () => {
   themeLabel.textContent = isDark ? 'LIGHT' : 'DARK';
 });
 
-// ── State ────────────────────────────────────────────────────────────
-const state = {
-  image:      null,
-  blockSize:  8,
-  contrast:   0,
-  saturation: 1.0,
-  colorMode:  'full',
+// ── Palettes ─────────────────────────────────────────────────────────
+const PALETTES = {
+  gameboy: [
+    [15,56,15],[48,98,48],[139,172,15],[155,188,15],
+  ],
+  raccoin: [
+    [20,18,18],[48,44,42],[82,76,72],[118,112,106],
+    [158,152,144],[194,182,162],[220,208,188],[240,236,228],
+  ],
+  nes: [
+    [84,84,84],[0,30,116],[8,16,144],[48,0,136],[68,0,100],[92,0,48],[84,4,0],[60,24,0],
+    [32,42,0],[8,58,0],[0,64,0],[0,60,0],[0,50,60],[0,0,0],
+    [152,150,152],[8,76,196],[48,50,236],[92,30,228],[136,20,176],[160,20,100],[152,34,32],[120,60,0],
+    [84,90,0],[40,114,0],[8,124,0],[0,118,40],[0,102,120],[0,0,0],
+    [236,238,236],[76,154,236],[120,124,236],[176,98,236],[228,84,236],[236,88,180],[236,106,100],[212,136,32],
+    [160,170,0],[116,196,0],[76,208,32],[56,204,108],[56,180,204],[60,60,60],
+    [236,238,236],[168,204,236],[188,188,236],[212,178,236],[236,174,236],[236,174,212],[236,180,176],[228,196,144],
+    [204,210,120],[180,222,120],[168,226,144],[152,226,180],[160,214,228],[160,162,160],
+  ],
+  c64: [
+    [0,0,0],[255,255,255],[136,0,0],[170,255,238],
+    [204,68,204],[0,204,85],[0,0,170],[238,238,119],
+    [221,136,85],[102,68,0],[255,119,119],[51,51,51],
+    [119,119,119],[170,255,102],[0,136,255],[187,187,187],
+  ],
+  cga: [
+    [0,0,0],[85,255,255],[255,85,255],[255,255,255],
+  ],
 };
 
-// ── DOM refs ─────────────────────────────────────────────────────────
-const fileInput      = document.getElementById('fileInput');
-const uploadBtn      = document.getElementById('uploadBtn');
-const blockSlider    = document.getElementById('blockSlider');
-const blockVal       = document.getElementById('blockVal');
-const contrastSlider = document.getElementById('contrastSlider');
-const contrastVal    = document.getElementById('contrastVal');
-const satSlider      = document.getElementById('satSlider');
-const satVal         = document.getElementById('satVal');
-const outputCanvas   = document.getElementById('outputCanvas');
-const canvasWrap     = document.getElementById('canvasWrap');
-const dropZone       = document.getElementById('dropZone');
-const exportBtn      = document.getElementById('exportBtn');
-const infoChip       = document.getElementById('infoChip');
+// ── Bayer 4×4 threshold matrix ────────────────────────────────────────
+const BAYER4 = [
+  [ 0, 8, 2,10],
+  [12, 4,14, 6],
+  [ 3,11, 1, 9],
+  [15, 7,13, 5],
+];
 
-const ctx = outputCanvas.getContext('2d', { willReadFrequently: true });
+// ── State ────────────────────────────────────────────────────────────
+const state = {
+  image:            null,
+  blockSize:        8,
+  contrast:         0,
+  saturation:       1.0,
+  colorMode:        'full',
+  ditherType:       'none',
+  ditherIntensity:  0.5,
+  scanlines:        false,
+  scanlineIntensity:0.5,
+  rgbSplit:         0,
+  jitter:           0,
+};
 
-// ── File upload ──────────────────────────────────────────────────────
+// ── DOM ──────────────────────────────────────────────────────────────
+const fileInput       = document.getElementById('fileInput');
+const uploadBtn       = document.getElementById('uploadBtn');
+const blockSlider     = document.getElementById('blockSlider');
+const blockVal        = document.getElementById('blockVal');
+const contrastSlider  = document.getElementById('contrastSlider');
+const contrastVal     = document.getElementById('contrastVal');
+const satSlider       = document.getElementById('satSlider');
+const satVal          = document.getElementById('satVal');
+const ditherTypeEl    = document.getElementById('ditherType');
+const ditherSlider    = document.getElementById('ditherSlider');
+const ditherVal       = document.getElementById('ditherVal');
+const scanlineToggle  = document.getElementById('scanlineToggle');
+const scanlineSlider  = document.getElementById('scanlineSlider');
+const scanlineVal     = document.getElementById('scanlineVal');
+const rgbSplitSlider  = document.getElementById('rgbSplitSlider');
+const rgbSplitVal     = document.getElementById('rgbSplitVal');
+const jitterSlider    = document.getElementById('jitterSlider');
+const jitterVal       = document.getElementById('jitterVal');
+const outputCanvas    = document.getElementById('outputCanvas');
+const canvasWrap      = document.getElementById('canvasWrap');
+const dropZone        = document.getElementById('dropZone');
+const exportBtn       = document.getElementById('exportBtn');
+const infoChip        = document.getElementById('infoChip');
+const ctx             = outputCanvas.getContext('2d', { willReadFrequently: true });
+
+// ── Events ───────────────────────────────────────────────────────────
 uploadBtn.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
 
-function loadFile(file) {
-  if (!file || !file.type.startsWith('image/')) return;
-  const url = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    state.image = img;
-    URL.revokeObjectURL(url);
-    render();
-    exportBtn.disabled = false;
-    dropZone.style.display = 'none';
-    outputCanvas.style.display = 'block';
-  };
-  img.onerror = () => URL.revokeObjectURL(url);
-  img.src = url;
-}
-
-// ── Drag & drop ──────────────────────────────────────────────────────
 canvasWrap.addEventListener('dragenter', e => { e.preventDefault(); canvasWrap.classList.add('drag-over'); });
-canvasWrap.addEventListener('dragover',  e => { e.preventDefault(); });
+canvasWrap.addEventListener('dragover',  e => e.preventDefault());
 canvasWrap.addEventListener('dragleave', e => { if (!canvasWrap.contains(e.relatedTarget)) canvasWrap.classList.remove('drag-over'); });
-canvasWrap.addEventListener('drop', e => {
-  e.preventDefault();
-  canvasWrap.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file) loadFile(file);
-});
+canvasWrap.addEventListener('drop', e => { e.preventDefault(); canvasWrap.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
 
-// ── Sliders ──────────────────────────────────────────────────────────
-blockSlider.addEventListener('input', () => {
-  state.blockSize = +blockSlider.value;
-  blockVal.textContent = state.blockSize + ' px';
-  render();
-});
+blockSlider.addEventListener('input', () => { state.blockSize = +blockSlider.value; blockVal.textContent = state.blockSize + ' px'; render(); });
+contrastSlider.addEventListener('input', () => { state.contrast = +contrastSlider.value; contrastVal.textContent = (state.contrast > 0 ? '+' : '') + state.contrast; render(); });
+satSlider.addEventListener('input', () => { state.saturation = +satSlider.value / 10; satVal.textContent = state.saturation.toFixed(1) + '×'; render(); });
+ditherTypeEl.addEventListener('change', () => { state.ditherType = ditherTypeEl.value; render(); });
+ditherSlider.addEventListener('input', () => { state.ditherIntensity = +ditherSlider.value / 100; ditherVal.textContent = ditherSlider.value + '%'; render(); });
+scanlineToggle.addEventListener('change', () => { state.scanlines = scanlineToggle.checked; render(); });
+scanlineSlider.addEventListener('input', () => { state.scanlineIntensity = +scanlineSlider.value / 100; scanlineVal.textContent = scanlineSlider.value + '%'; render(); });
+rgbSplitSlider.addEventListener('input', () => { state.rgbSplit = +rgbSplitSlider.value; rgbSplitVal.textContent = state.rgbSplit + ' px'; render(); });
+jitterSlider.addEventListener('input', () => { state.jitter = +jitterSlider.value; jitterVal.textContent = state.jitter + ' px'; render(); });
 
-contrastSlider.addEventListener('input', () => {
-  state.contrast = +contrastSlider.value;
-  contrastVal.textContent = (state.contrast > 0 ? '+' : '') + state.contrast;
-  render();
-});
-
-satSlider.addEventListener('input', () => {
-  state.saturation = +satSlider.value / 10;
-  satVal.textContent = state.saturation.toFixed(1) + '×';
-  render();
-});
-
-// ── Color mode buttons ───────────────────────────────────────────────
 document.querySelectorAll('.mode-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
@@ -460,44 +444,28 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
   });
 });
 
-// ── Export ───────────────────────────────────────────────────────────
 exportBtn.addEventListener('click', exportPNG);
 
-function exportPNG() {
-  if (!state.image) return;
-  const exportC = document.createElement('canvas');
-  const exportCtx = exportC.getContext('2d', { willReadFrequently: true });
-  const { image, blockSize } = state;
-  const W = image.naturalWidth, H = image.naturalHeight;
-  const pW = Math.max(1, Math.ceil(W / blockSize));
-  const pH = Math.max(1, Math.ceil(H / blockSize));
-
-  exportC.width = pW; exportC.height = pH;
-  exportCtx.imageSmoothingEnabled = true;
-  exportCtx.imageSmoothingQuality = 'high';
-  exportCtx.drawImage(image, 0, 0, pW, pH);
-
-  const id = exportCtx.getImageData(0, 0, pW, pH);
-  applyAdjustments(id.data, state.contrast, state.saturation);
-  applyColorMode(id, state.colorMode, pW, pH);
-  exportCtx.putImageData(id, 0, 0);
-
-  const out = document.createElement('canvas');
-  out.width = W; out.height = H;
-  const outCtx = out.getContext('2d');
-  outCtx.imageSmoothingEnabled = false;
-  outCtx.drawImage(exportC, 0, 0, W, H);
-
-  const a = document.createElement('a');
-  a.download = `pixel-forge-${state.colorMode}-${state.blockSize}px.png`;
-  a.href = out.toDataURL('image/png');
-  a.click();
+// ── File load ─────────────────────────────────────────────────────────
+function loadFile(file) {
+  if (!file || !file.type.startsWith('image/')) return;
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    state.image = img;
+    URL.revokeObjectURL(url);
+    dropZone.style.display = 'none';
+    outputCanvas.style.display = 'block';
+    exportBtn.disabled = false;
+    render();
+  };
+  img.onerror = () => URL.revokeObjectURL(url);
+  img.src = url;
 }
 
-// ── Render pipeline ──────────────────────────────────────────────────
+// ── Core render ───────────────────────────────────────────────────────
 function render() {
   if (!state.image) return;
-
   const { image, blockSize } = state;
   const W = image.naturalWidth, H = image.naturalHeight;
   const pW = Math.max(1, Math.ceil(W / blockSize));
@@ -511,8 +479,7 @@ function render() {
   tctx.drawImage(image, 0, 0, pW, pH);
 
   const id = tctx.getImageData(0, 0, pW, pH);
-  applyAdjustments(id.data, state.contrast, state.saturation);
-  applyColorMode(id, state.colorMode, pW, pH);
+  processPixelData(id, pW, pH);
   tctx.putImageData(id, 0, 0);
 
   outputCanvas.width  = W;
@@ -524,136 +491,243 @@ function render() {
   infoChip.textContent = `${W}×${H}  |  ${pW}×${pH} blocks  |  ${blockSize}px`;
 }
 
-// ── Image adjustments ────────────────────────────────────────────────
+// ── Export ────────────────────────────────────────────────────────────
+function exportPNG() {
+  if (!state.image) return;
+  const { image, blockSize } = state;
+  const W = image.naturalWidth, H = image.naturalHeight;
+  const pW = Math.max(1, Math.ceil(W / blockSize));
+  const pH = Math.max(1, Math.ceil(H / blockSize));
+
+  const ec = document.createElement('canvas');
+  ec.width = pW; ec.height = pH;
+  const ectx = ec.getContext('2d', { willReadFrequently: true });
+  ectx.imageSmoothingEnabled = true;
+  ectx.imageSmoothingQuality = 'high';
+  ectx.drawImage(image, 0, 0, pW, pH);
+
+  const id = ectx.getImageData(0, 0, pW, pH);
+  processPixelData(id, pW, pH);
+  ectx.putImageData(id, 0, 0);
+
+  const out = document.createElement('canvas');
+  out.width = W; out.height = H;
+  const octx = out.getContext('2d');
+  octx.imageSmoothingEnabled = false;
+  octx.drawImage(ec, 0, 0, W, H);
+
+  const a = document.createElement('a');
+  a.download = `pixel-forge-${state.colorMode}-${blockSize}px.png`;
+  a.href = out.toDataURL('image/png');
+  a.click();
+}
+
+// ── Full processing pipeline ──────────────────────────────────────────
+function processPixelData(imageData, width, height) {
+  const d = imageData.data;
+  const { contrast, saturation, colorMode, ditherType, ditherIntensity,
+          scanlines, scanlineIntensity, rgbSplit, jitter } = state;
+
+  // 1. Contrast + saturation
+  applyAdjustments(d, contrast, saturation);
+
+  // 2. Dither + colour mode
+  const palette = PALETTES[colorMode] || null;
+  if (ditherType === 'fs' && palette) {
+    // Floyd-Steinberg handles quantisation
+    applyFloydSteinberg(d, width, height, palette, ditherIntensity);
+  } else {
+    if (ditherType === 'bayer') applyBayerNoise(d, width, height, ditherIntensity);
+    applyColorMode(imageData, colorMode, width, height);
+  }
+
+  // 3. Global glitch (rgb split + jitter)
+  if (rgbSplit > 0 || jitter > 0) applyGlitch(d, width, height, rgbSplit, jitter);
+
+  // 4. CRT scanlines (baked into pixel grid — every other row)
+  if (scanlines) applyScanlines(d, width, height, scanlineIntensity);
+}
+
+// ── Adjustments ───────────────────────────────────────────────────────
 function applyAdjustments(data, contrast, sat) {
   const cf = (259 * (contrast + 255)) / (255 * (259 - contrast));
   for (let i = 0; i < data.length; i += 4) {
     let r = data[i], g = data[i+1], b = data[i+2];
-    r = cf * (r - 128) + 128;
-    g = cf * (g - 128) + 128;
-    b = cf * (b - 128) + 128;
+    r = cf*(r-128)+128; g = cf*(g-128)+128; b = cf*(b-128)+128;
     const lum = 0.299*r + 0.587*g + 0.114*b;
-    r = lum + sat * (r - lum);
-    g = lum + sat * (g - lum);
-    b = lum + sat * (b - lum);
-    data[i]   = clamp(r);
-    data[i+1] = clamp(g);
-    data[i+2] = clamp(b);
+    r = lum + sat*(r-lum); g = lum + sat*(g-lum); b = lum + sat*(b-lum);
+    data[i]=clamp(r); data[i+1]=clamp(g); data[i+2]=clamp(b);
   }
 }
 
-// ── Color mode transforms ────────────────────────────────────────────
+// ── Bayer ordered dither ──────────────────────────────────────────────
+function applyBayerNoise(data, width, height, intensity) {
+  const scale = intensity * 80;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      const t = (BAYER4[y % 4][x % 4] / 16 - 0.5) * scale;
+      data[i]   = clamp(data[i]   + t);
+      data[i+1] = clamp(data[i+1] + t);
+      data[i+2] = clamp(data[i+2] + t);
+    }
+  }
+}
+
+// ── Floyd-Steinberg dither ────────────────────────────────────────────
+function applyFloydSteinberg(data, width, height, palette, intensity) {
+  const buf = new Float32Array(width * height * 3);
+  for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {
+    buf[j] = data[i]; buf[j+1] = data[i+1]; buf[j+2] = data[i+2];
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const j = (y * width + x) * 3;
+      const oR = clamp(buf[j]), oG = clamp(buf[j+1]), oB = clamp(buf[j+2]);
+      const [nR, nG, nB] = nearestColor(oR, oG, oB, palette);
+      buf[j] = nR; buf[j+1] = nG; buf[j+2] = nB;
+
+      const eR = (oR - nR) * intensity;
+      const eG = (oG - nG) * intensity;
+      const eB = (oB - nB) * intensity;
+
+      function add(dx, dy, w) {
+        const nx = x+dx, ny = y+dy;
+        if (nx >= 0 && nx < width && ny < height) {
+          const nj = (ny * width + nx) * 3;
+          buf[nj] += eR*w; buf[nj+1] += eG*w; buf[nj+2] += eB*w;
+        }
+      }
+      add( 1, 0, 7/16); add(-1, 1, 3/16); add(0, 1, 5/16); add(1, 1, 1/16);
+    }
+  }
+
+  for (let i = 0, j = 0; i < data.length; i += 4, j += 3) {
+    data[i]=clamp(buf[j]); data[i+1]=clamp(buf[j+1]); data[i+2]=clamp(buf[j+2]);
+  }
+}
+
+// ── Colour mode ───────────────────────────────────────────────────────
 function applyColorMode(imageData, mode, width, height) {
   const d = imageData.data;
+
+  // Palette modes — nearest-colour quantisation
+  if (PALETTES[mode]) {
+    const pal = PALETTES[mode];
+    for (let i = 0; i < d.length; i += 4) {
+      const [r,g,b] = nearestColor(d[i], d[i+1], d[i+2], pal);
+      d[i]=r; d[i+1]=g; d[i+2]=b;
+    }
+    return;
+  }
+
   if (mode === 'full') return;
 
   if (mode === 'matrix') {
     for (let i = 0; i < d.length; i += 4) {
-      const g = luma(d[i], d[i+1], d[i+2]);
-      d[i]   = Math.round(g * 0.08);
-      d[i+1] = clamp(g);
-      d[i+2] = Math.round(g * 0.18);
+      const g = luma(d[i],d[i+1],d[i+2]);
+      d[i]=Math.round(g*.08); d[i+1]=clamp(g); d[i+2]=Math.round(g*.18);
     }
     return;
   }
 
   if (mode === 'amber') {
     for (let i = 0; i < d.length; i += 4) {
-      const g = luma(d[i], d[i+1], d[i+2]);
-      d[i]   = clamp(g * 1.10);
-      d[i+1] = clamp(g * 0.48);
-      d[i+2] = clamp(g * 0.02);
+      const g = luma(d[i],d[i+1],d[i+2]);
+      d[i]=clamp(g*1.10); d[i+1]=clamp(g*.48); d[i+2]=clamp(g*.02);
     }
     return;
   }
 
   if (mode === 'cyber') {
     for (let i = 0; i < d.length; i += 4) {
-      const g = luma(d[i], d[i+1], d[i+2]);
-      d[i]   = clamp(g * 0.06);
-      d[i+1] = clamp(g * 1.08);
-      d[i+2] = clamp(g * 1.18);
-    }
-    return;
-  }
-
-  if (mode === 'gameboy') {
-    const pal = [[15,56,15],[48,98,48],[139,172,15],[155,188,15]];
-    for (let i = 0; i < d.length; i += 4) {
-      const g = luma(d[i], d[i+1], d[i+2]);
-      const idx = Math.min(3, g >> 6);
-      d[i]   = pal[idx][0];
-      d[i+1] = pal[idx][1];
-      d[i+2] = pal[idx][2];
+      const g = luma(d[i],d[i+1],d[i+2]);
+      d[i]=clamp(g*.06); d[i+1]=clamp(g*1.08); d[i+2]=clamp(g*1.18);
     }
     return;
   }
 
   if (mode === 'blueprint') {
     for (let i = 0; i < d.length; i += 4) {
-      const g = luma(d[i], d[i+1], d[i+2]);
-      const t = 255 - g;
-      d[i]   = clamp(8  + t * 0.22);
-      d[i+1] = clamp(28 + t * 0.52);
-      d[i+2] = clamp(72 + t * 0.75);
-    }
-    return;
-  }
-
-  if (mode === 'raccoin') {
-    // 8-stop palette built from real raccoon colouring:
-    // black mask → dark charcoal → slate gray → warm mid-gray →
-    // cool light gray → buff tan → cream face → off-white highlight
-    const pal = [
-      [ 20,  18,  18],   // near-black (mask, paws, ear tips)
-      [ 48,  44,  42],   // dark charcoal (deep shadow fur)
-      [ 82,  76,  72],   // dark warm gray (body shadow)
-      [118, 112, 106],   // mid warm gray (main body fur)
-      [158, 152, 144],   // cool mid-gray (lighter body)
-      [194, 182, 162],   // buff / tawny (underbelly warmth)
-      [220, 208, 188],   // cream (face, around eyes)
-      [240, 236, 228],   // near-white (brightest highlights)
-    ];
-    const stops = pal.length;
-    for (let i = 0; i < d.length; i += 4) {
-      const g = luma(d[i], d[i+1], d[i+2]);
-      const idx = Math.min(stops - 1, Math.floor(g / (256 / stops)));
-      d[i]   = pal[idx][0];
-      d[i+1] = pal[idx][1];
-      d[i+2] = pal[idx][2];
+      const t = 255 - luma(d[i],d[i+1],d[i+2]);
+      d[i]=clamp(8+t*.22); d[i+1]=clamp(28+t*.52); d[i+2]=clamp(72+t*.75);
     }
     return;
   }
 
   if (mode === 'vhs') {
     const orig = new Uint8ClampedArray(d);
-    const shift = 3;
     const rowShift = new Int32Array(height);
     for (let y = 0; y < height; y++) {
-      if (Math.random() < 0.07) rowShift[y] = (Math.random() * 12 - 6) | 0;
+      if (Math.random() < .07) rowShift[y] = (Math.random()*12-6)|0;
     }
     for (let y = 0; y < height; y++) {
       const rs = rowShift[y];
-      const scanDark = (y % 3 === 0) ? 0.62 : 1;
+      const sd = (y%3===0) ? .62 : 1;
       for (let x = 0; x < width; x++) {
-        const i  = (y * width + x) * 4;
-        const rx = Math.min(width-1, Math.max(0, x + shift + rs));
-        const ri = (y * width + rx) * 4;
-        const bx = Math.min(width-1, Math.max(0, x - shift + rs));
-        const bi = (y * width + bx) * 4;
-        const gi = (y * width + Math.min(width-1, Math.max(0, x + rs))) * 4;
-        d[i]   = clamp(orig[ri]      * scanDark);
-        d[i+1] = clamp((orig[gi+1] + 12) * scanDark);
-        d[i+2] = clamp(orig[bi+2]   * scanDark);
+        const i  = (y*width+x)*4;
+        const rx = Math.min(width-1, Math.max(0, x+3+rs));
+        const bx = Math.min(width-1, Math.max(0, x-3+rs));
+        const gx = Math.min(width-1, Math.max(0, x+rs));
+        d[i]   = clamp(orig[(y*width+rx)*4]     * sd);
+        d[i+1] = clamp((orig[(y*width+gx)*4+1]+12) * sd);
+        d[i+2] = clamp(orig[(y*width+bx)*4+2]   * sd);
       }
     }
     return;
   }
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
-function luma(r, g, b) { return 0.299*r + 0.587*g + 0.114*b; }
-function clamp(v) { return v < 0 ? 0 : v > 255 ? 255 : Math.round(v); }
+// ── Global glitch ─────────────────────────────────────────────────────
+function applyGlitch(data, width, height, rgbSplit, jitter) {
+  const orig = new Uint8ClampedArray(data);
+  const rowOff = new Int32Array(height);
+  if (jitter > 0) {
+    for (let y = 0; y < height; y++) {
+      if (Math.random() < .15) rowOff[y] = Math.round((Math.random()*2-1)*jitter);
+    }
+  }
+  for (let y = 0; y < height; y++) {
+    const jo = rowOff[y];
+    for (let x = 0; x < width; x++) {
+      const i  = (y*width+x)*4;
+      const rx = Math.min(width-1, Math.max(0, x+rgbSplit+jo));
+      const bx = Math.min(width-1, Math.max(0, x-rgbSplit+jo));
+      const gx = Math.min(width-1, Math.max(0, x+jo));
+      data[i]   = orig[(y*width+rx)*4];
+      data[i+1] = orig[(y*width+gx)*4+1];
+      data[i+2] = orig[(y*width+bx)*4+2];
+    }
+  }
+}
+
+// ── CRT scanlines ─────────────────────────────────────────────────────
+function applyScanlines(data, width, height, intensity) {
+  const dark = 1 - intensity;
+  for (let y = 1; y < height; y += 2) {
+    for (let x = 0; x < width; x++) {
+      const i = (y*width+x)*4;
+      data[i]=Math.round(data[i]*dark); data[i+1]=Math.round(data[i+1]*dark); data[i+2]=Math.round(data[i+2]*dark);
+    }
+  }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function luma(r,g,b) { return 0.299*r + 0.587*g + 0.114*b; }
+function clamp(v) { return v<0?0:v>255?255:Math.round(v); }
+
+function nearestColor(r, g, b, palette) {
+  let best = palette[0], bestD = Infinity;
+  for (let j = 0; j < palette.length; j++) {
+    const p = palette[j];
+    const dr = r-p[0], dg = g-p[1], db = b-p[2];
+    // Perceptual weighting: green counts more
+    const d = dr*dr + dg*dg*1.5 + db*db*.8;
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
+}
 </script>
 </body>
 </html>
