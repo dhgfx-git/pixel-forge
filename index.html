@@ -719,45 +719,38 @@ async function takePhoto() {
 
 function runCountdown() {
   return new Promise(resolve => {
-    let count = 3;
+    const steps = ['3','2','1','📸'];
+    let i = 0;
     countdownEl.classList.add('active');
 
-    // Seed initial number element
-    countdownEl.querySelector('#countdownNum').textContent = count;
-    countdownEl.querySelector('#countdownNum').style.color = '#ec4899';
-    countdownEl.querySelector('#countdownNum').style.textShadow = '0 0 30px rgba(236,72,153,.9), 0 0 70px rgba(236,72,153,.4)';
+    function showStep() {
+      const isFinal = (i === steps.length - 1);
 
-    function showNext() {
-      // Re-trigger animation by swapping element
+      // Swap element to re-trigger CSS animation
       const old = countdownEl.querySelector('#countdownNum');
-      const fresh = old.cloneNode(false);
-      fresh.id = 'countdownNum';
-      fresh.textContent = count;
-      old.replaceWith(fresh);
-      SFX.countdownBeep(false);
+      const el = document.createElement('span');
+      el.id = 'countdownNum';
+      el.textContent = steps[i];
+      if (isFinal) {
+        el.style.color = '#f4a623';
+        el.style.textShadow = '0 0 30px rgba(244,166,35,.9),0 0 70px rgba(244,166,35,.4)';
+      }
+      old.replaceWith(el);
 
-      count--;
-      if (count > 0) {
-        setTimeout(showNext, 900);
+      SFX.countdownBeep(isFinal);
+      i++;
+
+      if (!isFinal) {
+        setTimeout(showStep, 900);
       } else {
         setTimeout(() => {
-          const el = countdownEl.querySelector('#countdownNum');
-          const fin = el.cloneNode(false);
-          fin.id = 'countdownNum';
-          fin.textContent = '📸';
-          fin.style.color = '#f4a623';
-          fin.style.textShadow = '0 0 30px rgba(244,166,35,.9), 0 0 70px rgba(244,166,35,.4)';
-          el.replaceWith(fin);
-          SFX.countdownBeep(true);
-          setTimeout(() => {
-            countdownEl.classList.remove('active');
-            resolve();
-          }, 400);
-        }, 900);
+          countdownEl.classList.remove('active');
+          resolve();
+        }, 500);
       }
     }
 
-    showNext();
+    showStep();
   });
 }
 
