@@ -625,6 +625,14 @@ function renderWebcam() {
 
 // ── Export ────────────────────────────────────────────────────────────
 function exportPNG() {
+  // In webcam mode just snapshot the current canvas frame
+  if (webcamActive) {
+    const a = document.createElement('a');
+    a.download = 'pixel-forge-webcam.png';
+    a.href = outputCanvas.toDataURL('image/png');
+    a.click();
+    return;
+  }
   if (!state.image) return;
   const { image, blockSize } = state;
   const W = image.naturalWidth, H = image.naturalHeight;
