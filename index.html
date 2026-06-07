@@ -205,7 +205,7 @@
 <header>
   <div>
     <h1>▓▒ DAN'S PIXEL FORGE</h1>
-    <div class="sub">// pixel art converter v1.5</div>
+    <div class="sub">// pixel art converter v1.6</div>
   </div>
   <div class="header-right">
     <div class="corner-deco">11 MODES<br>PNG EXPORT</div>
@@ -674,7 +674,7 @@ function applyColorMode(imageData, mode, width, height) {
     // ① Extra vibrancy: +40% sat, mild contrast, before clustering
     applyExtraVibrancy(d, width, height);
     // ② Kuwahara filter: smooth colour patches with sharp edges
-    applyKuwahara(d, width, height, width <= 120 ? 2 : 1);
+    applyKuwahara(d, width, height, 2);
     // ③ Highlight bloom on the clustered result
     applyBloom(d, width, height);
     return;
@@ -746,7 +746,7 @@ function clamp(v) { return v<0?0:v>255?255:Math.round(v); }
 // ① Hyper-vibrancy: +40% saturation + mild contrast boost
 function applyExtraVibrancy(data, width, height) {
   const cf  = (259 * (30 + 255)) / (255 * (259 - 30)); // contrast factor for +30
-  const sat = 1.4;
+  const sat = 1.3;
   for (let i = 0; i < data.length; i += 4) {
     let r = data[i], g = data[i+1], b = data[i+2];
     r = cf*(r-128)+128; g = cf*(g-128)+128; b = cf*(b-128)+128;
@@ -837,39 +837,23 @@ function applyBloom(data, width, height) {
   }
 }
 
-// ④ CRT Phosphor / Aperture Grille — applied at full output resolution
+// ④ CRT Aperture Grille — horizontal scanlines + subtle RGB column tint
+// No block-border grid lines (those cause crosshatch)
 function applyPhosphorMask(data, width, height, blockSize) {
-  const third = Math.max(1, Math.floor(blockSize / 3));
-  for (let y=0; y<height; y++) {
-    const bY = y % blockSize;
-    const borderRow = (bY === blockSize-1);
-    for (let x=0; x<width; x++) {
-      const i=(y*width+x)*4;
-      const bX = x % blockSize;
-      const borderCol = (bX === blockSize-1);
-
-      if (borderRow || borderCol) {
-        // Shadow-mask grid line: darken the seam between pixel blocks
-        data[i]  =Math.round(data[i]  *0.62);
-        data[i+1]=Math.round(data[i+1]*0.62);
-        data[i+2]=Math.round(data[i+2]*0.62);
-      } else if (blockSize >= 5) {
-        // Sub-pixel RGB phosphor tinting within each block
-        const sub = Math.floor(bX / third);
-        if (sub === 0) {          // Red phosphor stripe
-          data[i]  =Math.min(255,Math.round(data[i]  *1.09));
-          data[i+1]=Math.round(data[i+1]*0.93);
-          data[i+2]=Math.round(data[i+2]*0.91);
-        } else if (sub === 1) {   // Green phosphor stripe
-          data[i]  =Math.round(data[i]  *0.93);
-          data[i+1]=Math.min(255,Math.round(data[i+1]*1.09));
-          data[i+2]=Math.round(data[i+2]*0.93);
-        } else {                  // Blue phosphor stripe
-          data[i]  =Math.round(data[i]  *0.91);
-          data[i+1]=Math.round(data[i+1]*0.93);
-          data[i+2]=Math.min(255,Math.round(data[i+2]*1.09));
-        }
-      }
+  for (let y = 0; y < height; y++) {
+    // Horizontal scanline: every other OUTPUT row dimmed slightly
+    const scan = (y % 2 === 1) ? 0.86 : 1.0;
+    for (let x = 0; x < width; x++) {
+      const i = (y * width + x) * 4;
+      // 3-pixel aperture grille column cycle — very subtle RGB warmth shift
+      const sub = x % 3;
+      let rm = scan, gm = scan, bm = scan;
+      if      (sub === 0) { rm *= 1.04; gm *= 0.97; bm *= 0.94; }
+      else if (sub === 1) { rm *= 0.97; gm *= 1.04; bm *= 0.97; }
+      else                { rm *= 0.94; gm *= 0.97; bm *= 1.04; }
+      data[i]  = clamp(data[i]   * rm);
+      data[i+1]= clamp(data[i+1] * gm);
+      data[i+2]= clamp(data[i+2] * bm);
     }
   }
 }
