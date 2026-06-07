@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -268,8 +268,8 @@
 
 <header>
   <div>
-    <h1>▓▒ PIXEL FORGE</h1>
-    <div class="sub">// pixel art converter v1.0</div>
+    <h1>▓▒ DAN'S PIXEL FORGE</h1>
+    <div class="sub">// pixel art converter v1.1</div>
   </div>
   <div class="header-right">
     <div class="corner-deco">8 MODES<br>PNG EXPORT</div>
@@ -362,7 +362,10 @@ const themeToggle = document.getElementById('themeToggle');
 const themeIcon   = document.getElementById('themeIcon');
 const themeLabel  = document.getElementById('themeLabel');
 
-let isDark = true;
+let isDark = false;
+html.setAttribute('data-theme', 'light');
+themeIcon.textContent  = '🌙';
+themeLabel.textContent = 'DARK';
 
 themeToggle.addEventListener('click', () => {
   isDark = !isDark;
