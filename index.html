@@ -269,7 +269,7 @@
 <header>
   <div>
     <h1>▓▒ DAN'S PIXEL FORGE</h1>
-    <div class="sub">// pixel art converter v1.1</div>
+    <div class="sub">// pixel art converter v1.2</div>
   </div>
   <div class="header-right">
     <div class="corner-deco">8 MODES<br>PNG EXPORT</div>
@@ -601,16 +601,23 @@ function applyColorMode(imageData, mode, width, height) {
   }
 
   if (mode === 'raccoin') {
+    // 8-stop palette built from real raccoon colouring:
+    // black mask → dark charcoal → slate gray → warm mid-gray →
+    // cool light gray → buff tan → cream face → off-white highlight
     const pal = [
-      [10,  8, 16],
-      [50, 46, 64],
-      [112,106,132],
-      [188,182,206],
-      [224,208,148],
+      [ 20,  18,  18],   // near-black (mask, paws, ear tips)
+      [ 48,  44,  42],   // dark charcoal (deep shadow fur)
+      [ 82,  76,  72],   // dark warm gray (body shadow)
+      [118, 112, 106],   // mid warm gray (main body fur)
+      [158, 152, 144],   // cool mid-gray (lighter body)
+      [194, 182, 162],   // buff / tawny (underbelly warmth)
+      [220, 208, 188],   // cream (face, around eyes)
+      [240, 236, 228],   // near-white (brightest highlights)
     ];
+    const stops = pal.length;
     for (let i = 0; i < d.length; i += 4) {
       const g = luma(d[i], d[i+1], d[i+2]);
-      const idx = Math.min(4, Math.floor(g / 52));
+      const idx = Math.min(stops - 1, Math.floor(g / (256 / stops)));
       d[i]   = pal[idx][0];
       d[i+1] = pal[idx][1];
       d[i+2] = pal[idx][2];
