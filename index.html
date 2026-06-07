@@ -100,6 +100,9 @@
       letter-spacing:1px; cursor:pointer; transition:all .15s;
     }
     .upload-btn:hover { background:var(--accent); color:#fff; box-shadow:0 0 16px var(--glow); }
+    #webcamBtn:hover  { background:#ec4899 !important; color:#fff !important; box-shadow:0 0 16px rgba(236,72,153,.5); }
+    #webcamBtn.live   { background:#ec4899 !important; color:#fff !important; box-shadow:0 0 14px rgba(236,72,153,.6); animation:pulse-cam 1.4s ease-in-out infinite; }
+    @keyframes pulse-cam { 0%,100%{box-shadow:0 0 10px rgba(236,72,153,.5)} 50%{box-shadow:0 0 22px rgba(236,72,153,.9)} }
 
     .sl-row { display:flex; flex-direction:column; gap:5px; margin-bottom:12px; }
     .sl-row:last-child { margin-bottom:0; }
@@ -205,7 +208,7 @@
 <header>
   <div>
     <h1>▓▒ DAN'S PIXEL FORGE</h1>
-    <div class="sub">// pixel art converter v1.6</div>
+    <div class="sub">// pixel art converter v1.7</div>
   </div>
   <div class="header-right">
     <div class="corner-deco">11 MODES<br>PNG EXPORT</div>
@@ -223,6 +226,7 @@
     <div class="sec-label">INPUT</div>
     <button class="upload-btn" id="uploadBtn">[ LOAD IMAGE ]</button>
     <input type="file" id="fileInput" accept="image/*" style="display:none">
+    <button class="upload-btn" id="webcamBtn" style="margin-top:7px;border-color:#ec4899;color:#ec4899;">[ LIVE WEBCAM ]</button>
   </div>
 
   <div class="pane">
@@ -391,9 +395,16 @@ const state = {
   jitter:           0,
 };
 
+// ── Webcam state ──────────────────────────────────────────────────────
+let webcamStream   = null;   // MediaStream
+let webcamVideo    = null;   // <video> element
+let webcamRAF      = null;   // requestAnimationFrame handle
+let webcamActive   = false;
+
 // ── DOM ──────────────────────────────────────────────────────────────
 const fileInput       = document.getElementById('fileInput');
 const uploadBtn       = document.getElementById('uploadBtn');
+const webcamBtn       = document.getElementById('webcamBtn');
 const blockSlider     = document.getElementById('blockSlider');
 const blockVal        = document.getElementById('blockVal');
 const contrastSlider  = document.getElementById('contrastSlider');
@@ -418,14 +429,16 @@ const infoChip        = document.getElementById('infoChip');
 const ctx             = outputCanvas.getContext('2d', { willReadFrequently: true });
 
 // ── Events ───────────────────────────────────────────────────────────
-uploadBtn.addEventListener('click', () => fileInput.click());
+uploadBtn.addEventListener('click', () => { stopWebcam(); fileInput.click(); });
 fileInput.addEventListener('change', e => loadFile(e.target.files[0]));
+webcamBtn.addEventListener('click', toggleWebcam);
 
 canvasWrap.addEventListener('dragenter', e => { e.preventDefault(); canvasWrap.classList.add('drag-over'); });
 canvasWrap.addEventListener('dragover',  e => e.preventDefault());
 canvasWrap.addEventListener('dragleave', e => { if (!canvasWrap.contains(e.relatedTarget)) canvasWrap.classList.remove('drag-over'); });
-canvasWrap.addEventListener('drop', e => { e.preventDefault(); canvasWrap.classList.remove('drag-over'); loadFile(e.dataTransfer.files[0]); });
+canvasWrap.addEventListener('drop', e => { e.preventDefault(); canvasWrap.classList.remove('drag-over'); stopWebcam(); loadFile(e.dataTransfer.files[0]); });
 
+// Sliders call render() — webcam loop picks up state changes automatically
 blockSlider.addEventListener('input', () => { state.blockSize = +blockSlider.value; blockVal.textContent = state.blockSize + ' px'; render(); });
 contrastSlider.addEventListener('input', () => { state.contrast = +contrastSlider.value; contrastVal.textContent = (state.contrast > 0 ? '+' : '') + state.contrast; render(); });
 satSlider.addEventListener('input', () => { state.saturation = +satSlider.value / 10; satVal.textContent = state.saturation.toFixed(1) + '×'; render(); });
@@ -447,6 +460,54 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
 
 exportBtn.addEventListener('click', exportPNG);
 
+// ── Webcam ────────────────────────────────────────────────────────────
+async function toggleWebcam() {
+  if (webcamActive) { stopWebcam(); return; }
+
+  try {
+    webcamStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+  } catch (err) {
+    alert('Camera access denied or unavailable.');
+    return;
+  }
+
+  // Hidden off-screen video element
+  webcamVideo = document.createElement('video');
+  webcamVideo.srcObject = webcamStream;
+  webcamVideo.playsInline = true;
+  webcamVideo.muted = true;
+  webcamVideo.style.cssText = 'position:absolute;left:-9999px;width:1px;height:1px;';
+  document.body.appendChild(webcamVideo);
+  await webcamVideo.play();
+
+  webcamActive = true;
+  webcamBtn.textContent = '[ ◉ STOP CAM ]';
+  webcamBtn.classList.add('live');
+  state.image = null;         // Detach any static image
+  dropZone.style.display = 'none';
+  outputCanvas.style.display = 'block';
+  exportBtn.disabled = false;
+
+  webcamLoop();
+}
+
+function stopWebcam() {
+  if (!webcamActive) return;
+  webcamActive = false;
+  cancelAnimationFrame(webcamRAF);
+  if (webcamStream) webcamStream.getTracks().forEach(t => t.stop());
+  if (webcamVideo)  { webcamVideo.remove(); webcamVideo = null; }
+  webcamStream = null;
+  webcamBtn.textContent = '[ LIVE WEBCAM ]';
+  webcamBtn.classList.remove('live');
+}
+
+function webcamLoop() {
+  if (!webcamActive) return;
+  renderWebcam();
+  webcamRAF = requestAnimationFrame(webcamLoop);
+}
+
 // ── File load ─────────────────────────────────────────────────────────
 function loadFile(file) {
   if (!file || !file.type.startsWith('image/')) return;
@@ -464,8 +525,9 @@ function loadFile(file) {
   img.src = url;
 }
 
-// ── Core render ───────────────────────────────────────────────────────
+// ── Core render (static image) ────────────────────────────────────────
 function render() {
+  if (webcamActive) return;   // webcam loop handles its own draws
   if (!state.image) return;
   const { image, blockSize } = state;
   const W = image.naturalWidth, H = image.naturalHeight;
@@ -488,7 +550,6 @@ function render() {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(tmp, 0, 0, W, H);
 
-  // Phosphor mask is applied at full output resolution for raccoin-art
   if (state.colorMode === 'raccoin-art') {
     const pid = ctx.getImageData(0, 0, W, H);
     applyPhosphorMask(pid.data, W, H, blockSize);
@@ -497,6 +558,69 @@ function render() {
 
   infoChip.style.display = 'block';
   infoChip.textContent = `${W}×${H}  |  ${pW}×${pH} blocks  |  ${blockSize}px`;
+}
+
+// ── Webcam render (called every rAF frame) ────────────────────────────
+function renderWebcam() {
+  if (!webcamVideo || webcamVideo.readyState < 2) return;
+
+  const { blockSize } = state;
+  const vW = webcamVideo.videoWidth;
+  const vH = webcamVideo.videoHeight;
+  if (!vW || !vH) return;
+
+  // Fill the canvas-wrap area, centre-crop to a 16:9-ish square window
+  const wrapW = canvasWrap.clientWidth  || 640;
+  const wrapH = canvasWrap.clientHeight || 480;
+
+  // Match canvas to wrapper so no CSS squash occurs
+  const displayW = wrapW;
+  const displayH = wrapH;
+
+  // Source crop: centre-crop video to display aspect ratio
+  const displayAR = displayW / displayH;
+  const videoAR   = vW / vH;
+  let sx = 0, sy = 0, sw = vW, sh = vH;
+  if (videoAR > displayAR) {
+    sw = Math.round(vH * displayAR);
+    sx = Math.round((vW - sw) / 2);
+  } else {
+    sh = Math.round(vW / displayAR);
+    sy = Math.round((vH - sh) / 2);
+  }
+
+  // Pixel-grid dimensions
+  const pW = Math.max(1, Math.ceil(displayW / blockSize));
+  const pH = Math.max(1, Math.ceil(displayH / blockSize));
+
+  // Draw cropped video → small pixel grid
+  const tmp = document.createElement('canvas');
+  tmp.width = pW; tmp.height = pH;
+  const tctx = tmp.getContext('2d', { willReadFrequently: true });
+  tctx.imageSmoothingEnabled = true;
+  tctx.imageSmoothingQuality = 'high';
+  // Mirror horizontally so it feels like a natural mirror
+  tctx.translate(pW, 0); tctx.scale(-1, 1);
+  tctx.drawImage(webcamVideo, sx, sy, sw, sh, 0, 0, pW, pH);
+  tctx.setTransform(1,0,0,1,0,0); // reset
+
+  const id = tctx.getImageData(0, 0, pW, pH);
+  processPixelData(id, pW, pH);
+  tctx.putImageData(id, 0, 0);
+
+  outputCanvas.width  = displayW;
+  outputCanvas.height = displayH;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(tmp, 0, 0, displayW, displayH);
+
+  if (state.colorMode === 'raccoin-art') {
+    const pid = ctx.getImageData(0, 0, displayW, displayH);
+    applyPhosphorMask(pid.data, displayW, displayH, blockSize);
+    ctx.putImageData(pid, 0, 0);
+  }
+
+  infoChip.style.display = 'block';
+  infoChip.textContent = `LIVE  |  ${pW}×${pH} blocks  |  ${blockSize}px`;
 }
 
 // ── Export ────────────────────────────────────────────────────────────
