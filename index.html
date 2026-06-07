@@ -161,6 +161,7 @@
     .mode-btn.active[data-mode="nes"]       { border-color:#e87428; color:#e87428; background:rgba(232,116,40,.09);  box-shadow:0 0 8px rgba(232,116,40,.25); }
     .mode-btn.active[data-mode="c64"]       { border-color:#7b71c4; color:#7b71c4; background:rgba(123,113,196,.09); box-shadow:0 0 8px rgba(123,113,196,.25); }
     .mode-btn.active[data-mode="cga"]       { border-color:#ff55ff; color:#ff55ff; background:rgba(255,85,255,.09);  box-shadow:0 0 8px rgba(255,85,255,.25); }
+    .mode-btn.active[data-mode="raccoin-art"] { border-color:#f4a623; color:#f4a623; background:rgba(244,166,35,.09); box-shadow:0 0 12px rgba(244,166,35,.4); font-weight:bold; }
 
     .export-btn {
       display:block; width:100%; padding:13px; background:var(--accent);
@@ -204,10 +205,10 @@
 <header>
   <div>
     <h1>▓▒ DAN'S PIXEL FORGE</h1>
-    <div class="sub">// pixel art converter v1.3</div>
+    <div class="sub">// pixel art converter v1.4</div>
   </div>
   <div class="header-right">
-    <div class="corner-deco">11 MODES<br>PNG EXPORT</div>
+    <div class="corner-deco">12 MODES<br>PNG EXPORT</div>
     <button class="theme-toggle" id="themeToggle">
       <span class="icon" id="themeIcon">🌙</span>
       <span id="themeLabel">DARK</span>
@@ -258,6 +259,7 @@
       <button class="mode-btn" data-mode="nes">NES<br>CLASSIC</button>
       <button class="mode-btn" data-mode="c64">C64<br>16COL</button>
       <button class="mode-btn" data-mode="cga">CGA<br>CYBER</button>
+      <button class="mode-btn" data-mode="raccoin-art" style="grid-column:1/-1;letter-spacing:.5px;">★ RACCOIN ART ★</button>
     </div>
   </div>
 
@@ -487,6 +489,13 @@ function render() {
   ctx.imageSmoothingEnabled = false;
   ctx.drawImage(tmp, 0, 0, W, H);
 
+  // Phosphor mask is applied at full output resolution for raccoin-art
+  if (state.colorMode === 'raccoin-art') {
+    const pid = ctx.getImageData(0, 0, W, H);
+    applyPhosphorMask(pid.data, W, H, blockSize);
+    ctx.putImageData(pid, 0, 0);
+  }
+
   infoChip.style.display = 'block';
   infoChip.textContent = `${W}×${H}  |  ${pW}×${pH} blocks  |  ${blockSize}px`;
 }
@@ -515,6 +524,12 @@ function exportPNG() {
   const octx = out.getContext('2d');
   octx.imageSmoothingEnabled = false;
   octx.drawImage(ec, 0, 0, W, H);
+
+  if (state.colorMode === 'raccoin-art') {
+    const pid = octx.getImageData(0, 0, W, H);
+    applyPhosphorMask(pid.data, W, H, blockSize);
+    octx.putImageData(pid, 0, 0);
+  }
 
   const a = document.createElement('a');
   a.download = `pixel-forge-${state.colorMode}-${blockSize}px.png`;
@@ -656,6 +671,16 @@ function applyColorMode(imageData, mode, width, height) {
     return;
   }
 
+  if (mode === 'raccoin-art') {
+    // ① Extra vibrancy: +40% sat, mild contrast, before clustering
+    applyExtraVibrancy(d, width, height);
+    // ② Kuwahara filter: smooth colour patches with sharp edges
+    applyKuwahara(d, width, height, width <= 120 ? 2 : 1);
+    // ③ Highlight bloom on the clustered result
+    applyBloom(d, width, height);
+    return;
+  }
+
   if (mode === 'vhs') {
     const orig = new Uint8ClampedArray(d);
     const rowShift = new Int32Array(height);
@@ -716,6 +741,139 @@ function applyScanlines(data, width, height, intensity) {
 // ── Helpers ───────────────────────────────────────────────────────────
 function luma(r,g,b) { return 0.299*r + 0.587*g + 0.114*b; }
 function clamp(v) { return v<0?0:v>255?255:Math.round(v); }
+
+// ── RACCOIN ART helpers ───────────────────────────────────────────────
+
+// ① Hyper-vibrancy: +40% saturation + mild contrast boost
+function applyExtraVibrancy(data, width, height) {
+  const cf  = (259 * (30 + 255)) / (255 * (259 - 30)); // contrast factor for +30
+  const sat = 1.4;
+  for (let i = 0; i < data.length; i += 4) {
+    let r = data[i], g = data[i+1], b = data[i+2];
+    r = cf*(r-128)+128; g = cf*(g-128)+128; b = cf*(b-128)+128;
+    const l = 0.299*r + 0.587*g + 0.114*b;
+    r = l + sat*(r-l); g = l + sat*(g-l); b = l + sat*(b-l);
+    data[i]=clamp(r); data[i+1]=clamp(g); data[i+2]=clamp(b);
+  }
+}
+
+// ② Kuwahara filter — smooth colour patches, sharp edges
+function applyKuwahara(data, width, height, r) {
+  const out = new Uint8ClampedArray(data.length);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      // 4 overlapping regions centred on (x,y)
+      const regions = [
+        [x-r, y-r, x,   y  ],
+        [x,   y-r, x+r, y  ],
+        [x-r, y,   x,   y+r],
+        [x,   y,   x+r, y+r],
+      ];
+      let bestVar = Infinity, bR = 0, bG = 0, bB = 0;
+      for (const [x0,y0,x1,y1] of regions) {
+        let sR=0,sG=0,sB=0,sR2=0,sG2=0,sB2=0,n=0;
+        for (let ry=Math.max(0,y0); ry<=Math.min(height-1,y1); ry++) {
+          for (let rx=Math.max(0,x0); rx<=Math.min(width-1,x1); rx++) {
+            const i=(ry*width+rx)*4;
+            const pr=data[i],pg=data[i+1],pb=data[i+2];
+            sR+=pr; sG+=pg; sB+=pb;
+            sR2+=pr*pr; sG2+=pg*pg; sB2+=pb*pb;
+            n++;
+          }
+        }
+        if (!n) continue;
+        const mR=sR/n, mG=sG/n, mB=sB/n;
+        const v = (sR2/n-mR*mR) + (sG2/n-mG*mG) + (sB2/n-mB*mB);
+        if (v < bestVar) { bestVar=v; bR=mR; bG=mG; bB=mB; }
+      }
+      const oi=(y*width+x)*4;
+      out[oi]=clamp(bR); out[oi+1]=clamp(bG); out[oi+2]=clamp(bB); out[oi+3]=255;
+    }
+  }
+  for (let i=0; i<data.length; i++) data[i]=out[i];
+}
+
+// ③ Highlight bloom — bright pixels bleed via screen blend into neighbours
+function applyBloom(data, width, height) {
+  const THRESH   = 200;   // ~78% brightness threshold
+  const STRENGTH = 0.38;
+  const bR = new Float32Array(width*height);
+  const bG = new Float32Array(width*height);
+  const bB = new Float32Array(width*height);
+
+  // Pass 1 — collect bloom source from bright pixels
+  for (let y=0; y<height; y++) {
+    for (let x=0; x<width; x++) {
+      const i=(y*width+x)*4;
+      const bright = luma(data[i],data[i+1],data[i+2]);
+      if (bright > THRESH) {
+        const amt = ((bright-THRESH)/(255-THRESH)) * STRENGTH;
+        const pi=y*width+x;
+        bR[pi]=data[i]*amt; bG[pi]=data[i+1]*amt; bB[pi]=data[i+2]*amt;
+      }
+    }
+  }
+
+  // Pass 2 — spread to 8 neighbours, screen-blend result onto image
+  const DIRS=[[-1,-1,.18],[0,-1,.28],[1,-1,.18],[-1,0,.28],[1,0,.28],[-1,1,.18],[0,1,.28],[1,1,.18]];
+  for (let y=0; y<height; y++) {
+    for (let x=0; x<width; x++) {
+      const pi=y*width+x;
+      let cR=bR[pi], cG=bG[pi], cB=bB[pi];
+      for (const [dx,dy,w] of DIRS) {
+        const nx=x+dx, ny=y+dy;
+        if (nx>=0&&nx<width&&ny>=0&&ny<height) {
+          const ni=ny*width+nx;
+          cR+=bR[ni]*w; cG+=bG[ni]*w; cB+=bB[ni]*w;
+        }
+      }
+      const i=pi*4;
+      const sr=data[i]/255, sg=data[i+1]/255, sb=data[i+2]/255;
+      const fr=Math.min(1,cR/255), fg=Math.min(1,cG/255), fb=Math.min(1,cB/255);
+      // Screen: 1-(1-src)(1-bloom)
+      data[i]  =Math.round((1-(1-sr)*(1-fr))*255);
+      data[i+1]=Math.round((1-(1-sg)*(1-fg))*255);
+      data[i+2]=Math.round((1-(1-sb)*(1-fb))*255);
+    }
+  }
+}
+
+// ④ CRT Phosphor / Aperture Grille — applied at full output resolution
+function applyPhosphorMask(data, width, height, blockSize) {
+  const third = Math.max(1, Math.floor(blockSize / 3));
+  for (let y=0; y<height; y++) {
+    const bY = y % blockSize;
+    const borderRow = (bY === blockSize-1);
+    for (let x=0; x<width; x++) {
+      const i=(y*width+x)*4;
+      const bX = x % blockSize;
+      const borderCol = (bX === blockSize-1);
+
+      if (borderRow || borderCol) {
+        // Shadow-mask grid line: darken the seam between pixel blocks
+        data[i]  =Math.round(data[i]  *0.62);
+        data[i+1]=Math.round(data[i+1]*0.62);
+        data[i+2]=Math.round(data[i+2]*0.62);
+      } else if (blockSize >= 5) {
+        // Sub-pixel RGB phosphor tinting within each block
+        const sub = Math.floor(bX / third);
+        if (sub === 0) {          // Red phosphor stripe
+          data[i]  =Math.min(255,Math.round(data[i]  *1.09));
+          data[i+1]=Math.round(data[i+1]*0.93);
+          data[i+2]=Math.round(data[i+2]*0.91);
+        } else if (sub === 1) {   // Green phosphor stripe
+          data[i]  =Math.round(data[i]  *0.93);
+          data[i+1]=Math.min(255,Math.round(data[i+1]*1.09));
+          data[i+2]=Math.round(data[i+2]*0.93);
+        } else {                  // Blue phosphor stripe
+          data[i]  =Math.round(data[i]  *0.91);
+          data[i+1]=Math.round(data[i+1]*0.93);
+          data[i+2]=Math.min(255,Math.round(data[i+2]*1.09));
+        }
+      }
+    }
+  }
+}
 
 function nearestColor(r, g, b, palette) {
   let best = palette[0], bestD = Infinity;
